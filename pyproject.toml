@@ -9,7 +9,7 @@ description = "Evection Sweep Lab: stellar mass loss sweeps the evection resonan
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "[Your Name]" }]
+authors = [{ name = "Taneesh Ryon U" }]
 keywords = ["celestial mechanics", "exomoons", "white dwarfs", "evection resonance", "N-body", "Rhea"]
 dependencies = ["numpy>=1.21", "scipy>=1.7", "matplotlib>=3.5"]
 
