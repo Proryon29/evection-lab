@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Evection Sweep Lab"
+version: 1.0.0
+date-released: 2026-10-11
+license: MIT
+repository-code: "https://github.com/Proryon29/evection-lab"
+authors:
+  - family-names: "[Family Name]"
+    given-names: "[Given Name]"
+keywords:
+  - celestial mechanics
+  - evection resonance
+  - exomoons
+  - white dwarfs
+  - stellar mass loss
+abstract: >-
+  An open simulator for the sweeping of the evection resonance through satellite
+  systems by stellar mass loss, with an orbit-averaged secular model, direct
+  three-body integrations with mass loss, a semi-analytic solar mass-loss history,
+  Laplace-Lagrange theory for real satellites and a verification suite.

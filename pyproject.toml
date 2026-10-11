@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evection-lab"
+version = "1.0.0"
+description = "Evection Sweep Lab: stellar mass loss sweeps the evection resonance through satellite systems"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "[Your Name]" }]
+keywords = ["celestial mechanics", "exomoons", "white dwarfs", "evection resonance", "N-body", "Rhea"]
+dependencies = ["numpy>=1.21", "scipy>=1.7", "matplotlib>=3.5"]
+
+[project.optional-dependencies]
+fast = ["numba>=0.56"]
+test = ["pytest>=7"]
+
+[project.scripts]
+evection-lab = "evection_lab.cli:main"
+
+[tool.setuptools]
+packages = ["evection_lab"]
+
+[tool.setuptools.package-data]
+evection_lab = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,1428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Evection Sweep Lab</title>
+<meta name="description" content="Interactive simulator for evection-resonance sweeping of moons by stellar mass loss.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@500;600&display=swap">
+<style>
+/* Layout: an instrument console. Masthead with the governing formula, a tab rail,
+   then per-lab a narrow control column beside a stacked results column. */
+:root {
+  --bg: #f3f5f8;          /* cool plate-glass page */
+  --surface: #ffffff;
+  --sunken: #e9edf2;
+  --ink: #131820;
+  --ink-2: #4a5462;
+  --muted: #6c7685;
+  --rule: #d9dee6;
+  --accent: #a8560a;      /* red-giant amber */
+  --accent-ink: #ffffff;
+  --accent-soft: #f6e6d6;
+  --good: #0a7d0a; --bad: #c43535; --warn: #9a6b00;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #4a3aa7;
+  --grid: #e6e9ee; --axis: #b9c0ca;
+  --ramp-0: #eef4fc; --ramp-1: #cde2fb; --ramp-2: #86b6ef; --ramp-3: #3987e5; --ramp-4: #1c5cab; --ramp-5: #0d366b;
+  --font-display: "Spectral", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116; --surface: #151a21; --sunken: #1b2129; --ink: #e7ebf1; --ink-2: #b6bfcc; --muted: #8b95a4;
+    --rule: #28303b; --accent: #f0a24a; --accent-ink: #1a1206; --accent-soft: #3a2a17;
+    --good: #3dbb3d; --bad: #ef6b6b; --warn: #e0b040;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #9085e9;
+    --grid: #222932; --axis: #3a434f;
+    --ramp-0: #142030; --ramp-1: #184f95; --ramp-2: #2a78d6; --ramp-3: #5598e7; --ramp-4: #9ec5f4; --ramp-5: #e3efff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1116; --surface: #151a21; --sunken: #1b2129; --ink: #e7ebf1; --ink-2: #b6bfcc; --muted: #8b95a4;
+  --rule: #28303b; --accent: #f0a24a; --accent-ink: #1a1206; --accent-soft: #3a2a17;
+  --good: #3dbb3d; --bad: #ef6b6b; --warn: #e0b040;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #9085e9;
+  --grid: #222932; --axis: #3a434f;
+  --ramp-0: #142030; --ramp-1: #184f95; --ramp-2: #2a78d6; --ramp-3: #5598e7; --ramp-4: #9ec5f4; --ramp-5: #e3efff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 64px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 4.4vw, 46px); line-height: 1.05; letter-spacing: -0.01em; }
+h2 { font-size: 22px; }
+h3 { font-size: 17px; font-family: var(--font-body); font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.mast { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; align-items: end; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+.mast-text { display: grid; gap: 10px; min-width: 0; }
+.lede { color: var(--ink-2); max-width: 64ch; }
+.mast-eq { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 14px 16px; overflow-x: auto; min-width: 0; }
+.mast-eq .eq-cap { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 4px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-block: 18px 20px; }
+.tabs button { font: 500 14px var(--font-body); color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.tabs button:hover { background: var(--sunken); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.tabs button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lab { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 22px; align-items: start; }
+.controls { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 16px; display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.controls h3 { font-size: 13px; font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.field { display: grid; gap: 4px; }
+.field label, .field .lab-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; color: var(--ink-2); }
+.field output, .num { font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.field .hint { font-size: 12px; color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+select { font: 14px var(--font-body); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); width: 100%; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; color: var(--ink-2); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: 600 14px var(--font-body); padding: 9px 14px; border-radius: 4px; border: 1px solid var(--ink); background: var(--ink); color: var(--bg); cursor: pointer; }
+.btn.secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
+.btn.accent { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: 0.5; cursor: progress; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button { font: 500 12.5px var(--font-body); padding: 4px 9px; border-radius: 999px; border: 1px solid var(--rule); background: var(--sunken); color: var(--ink-2); cursor: pointer; }
+.presets button:hover { border-color: var(--accent); color: var(--ink); }
+.results { display: grid; gap: 16px; min-width: 0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; }
+.stat { background: var(--surface); padding: 10px 12px; display: grid; gap: 2px; align-content: start; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { font-family: var(--font-mono); font-size: 17px; color: var(--ink); }
+.stat .s { font-size: 11.5px; color: var(--muted); }
+.stat.hl .v { color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 14px 14px 10px; min-width: 0; }
+.card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 8px; }
+.card-head p { font-size: 13px; color: var(--muted); max-width: 70ch; }
+.chart { position: relative; width: 100%; height: 300px; }
+.chart.tall { height: 360px; }
+.chart.sq { height: auto; aspect-ratio: 1 / 1; max-width: 100%; }
+.chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; font: 12px var(--font-mono); white-space: nowrap; box-shadow: 0 2px 10px rgba(0,0,0,0.12); z-index: 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.legend i.dot { width: 8px; height: 8px; border-radius: 50%; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12px var(--font-mono); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-2); background: var(--sunken); }
+.chip.pass { color: var(--good); border-color: currentColor; background: transparent; }
+.chip.fail { color: var(--bad); border-color: currentColor; background: transparent; }
+.chip.run { color: var(--warn); border-color: currentColor; background: transparent; }
+.chip.acc { color: var(--accent); border-color: currentColor; background: transparent; }
+.progress { height: 4px; background: var(--sunken); border-radius: 2px; overflow: hidden; }
+.progress > div { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
+.note { font-size: 13px; color: var(--muted); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--ink-2); font-size: 12.5px; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.verify-row td:nth-child(2) { min-width: 220px; }
+.eqs { display: grid; gap: 14px; }
+.eq-block { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; min-width: 0; }
+.eq-block .math { overflow-x: auto; }
+.eq-block p { color: var(--ink-2); font-size: 14px; max-width: 80ch; }
+mjx-container { color: var(--ink); }
+.status-line { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); min-height: 1.5em; }
+footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+@media (max-width: 920px) {
+  .mast { grid-template-columns: minmax(0, 1fr); }
+  .lab { grid-template-columns: minmax(0, 1fr); }
+  .controls { position: static; }
+  .two { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) { .wrap { padding-inline: 16px; } .chart { height: 250px; } }
+@media (prefers-reduced-motion: reduce) { .progress > div { transition: none; } }
+</style>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]], tags: "ams" },
+  svg: { fontCache: "global" },
+  startup: { typeset: true }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="mast-text">
+      <p class="eyebrow">Post-main-sequence satellite dynamics · companion simulator</p>
+      <h1>Evection Sweep Lab</h1>
+      <p class="lede">A Sun-like star sheds about half its mass on the red-giant and asymptotic giant branches. Every surviving planet's orbit slows as \(n_p \propto M_\ast^{2}\), so the evection resonance \(\dot\varpi = n_p\) sweeps outward through its moons, in the direction where capture is impossible. This lab integrates the orbit-averaged theory and the full three-body problem side by side and checks each analytic prediction of the paper.</p>
+    </div>
+    <div class="mast-eq">
+      <div class="eq-cap">Universal eccentricity imprint and adiabaticity</div>
+      \[ e_\star=\Big(\frac{15}{4}\,\frac{n_p}{n_m}\,\frac{\cos^4(\theta/2)}{f_{J_2}}\Big)^{1/2},\qquad \Lambda=\frac{225\pi}{64}\Big(\frac{n_p}{n_m}\Big)^{2}\cos^{8}\!\frac{\theta}{2}\;n_p t_M \]
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Simulator sections">
+    <button role="tab" id="tb-sweep" aria-controls="tab-sweep" aria-selected="true">Sweep lab</button>
+    <button role="tab" id="tb-nbody" aria-controls="tab-nbody" aria-selected="false">N-body lab</button>
+    <button role="tab" id="tb-rhea" aria-controls="tab-rhea" aria-selected="false">Rhea and the dying Sun</button>
+    <button role="tab" id="tb-verify" aria-controls="tab-verify" aria-selected="false">Verification suite</button>
+    <button role="tab" id="tb-eqs" aria-controls="tab-eqs" aria-selected="false">Equations</button>
+  </nav>
+
+  <!-- ============================== SWEEP LAB ============================== -->
+  <section id="tab-sweep" role="tabpanel" aria-labelledby="tb-sweep">
+    <div class="lab">
+      <form class="controls" id="sweepForm" autocomplete="off">
+        <h3>Orbit-averaged model</h3>
+        <div class="presets" aria-label="Presets">
+          <button type="button" data-preset="linear">Linear regime</button>
+          <button type="button" data-preset="plateau">Adiabatic plateau</button>
+          <button type="button" data-preset="eccentric">Eccentric moon</button>
+          <button type="button" data-preset="circular">Circular moon + octupole</button>
+          <button type="button" data-preset="capture">Capture direction</button>
+        </div>
+        <div class="field"><label for="sw-eps">\(n_p/n_m\) at resonance <output id="sw-eps-o"></output></label>
+          <input type="range" id="sw-eps" min="-4" max="-1.5" step="0.01" value="-2.52"><span class="hint">tidal small parameter \(\varepsilon\)</span></div>
+        <div class="field"><label for="sw-lam">Adiabaticity \(\Lambda\) <output id="sw-lam-o"></output></label>
+          <input type="range" id="sw-lam" min="-1" max="2.5" step="0.01" value="0.9"></div>
+        <div class="field"><label for="sw-e0">Initial \(e_0/e_\star\) <output id="sw-e0-o"></output></label>
+          <input type="range" id="sw-e0" min="-4" max="0.5" step="0.01" value="-1.5"></div>
+        <label class="check"><input type="checkbox" id="sw-circ"> Start exactly circular (\(e_0=0\))</label>
+        <div class="field"><label for="sw-th">Planet obliquity \(\theta\) <output id="sw-th-o"></output></label>
+          <input type="range" id="sw-th" min="0" max="85" step="0.5" value="0"></div>
+        <div class="field"><label for="sw-fj">Oblateness share \(f_{J_2}\) <output id="sw-fj-o"></output></label>
+          <input type="range" id="sw-fj" min="0.3" max="1" step="0.01" value="1"></div>
+        <label class="check"><input type="checkbox" id="sw-oct"> Include octupole tide</label>
+        <div class="field"><label for="sw-al">\(a_m/a_p\) <output id="sw-al-o"></output></label>
+          <input type="range" id="sw-al" min="-5" max="-2" step="0.01" value="-3.48"></div>
+        <div class="field"><label for="sw-dir">Sweep direction</label>
+          <select id="sw-dir"><option value="1">Stellar mass loss (\(n_p\) falls)</option><option value="-1">Inward migration (\(n_p\) rises)</option></select></div>
+        <div class="field"><label for="sw-n">Ensemble size <output id="sw-n-o"></output></label>
+          <input type="range" id="sw-n" min="1" max="96" step="1" value="32"></div>
+        <div class="btn-row"><button type="submit" class="btn accent" id="sw-run">Run sweep</button></div>
+        <div class="status-line" id="sw-status"></div>
+      </form>
+      <div class="results">
+        <div class="stats" id="sw-stats"></div>
+        <div class="card">
+          <div class="card-head"><h2>Eccentricity through the crossing</h2><p>Each line is one initial resonant phase. Shaded: the parametric band \(|\delta|<c\) where circular orbits are unstable.</p></div>
+          <div class="chart tall" id="ch-sw-e"></div><div class="legend" id="lg-sw-e"></div>
+        </div>
+        <div class="two">
+          <div class="card">
+            <div class="card-head"><h2>Phase portrait</h2><p>Frozen-parameter level curves of the Hamiltonian at the chosen detuning, with the trajectory passing through it.</p></div>
+            <div class="field"><label for="sw-pd">Detuning \(\delta/c\) <output id="sw-pd-o"></output></label><input type="range" id="sw-pd" min="-6" max="6" step="0.05" value="-1.5"></div>
+            <div class="chart sq" id="ch-sw-pp"></div><div class="legend" id="lg-sw-pp"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Outcome by initial phase</h2><p>Final \(e_f/e_\star\) for every ensemble member against its starting phase \(\phi_0\).</p></div>
+            <div class="chart" id="ch-sw-ph"></div><div class="legend" id="lg-sw-ph"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Universal transfer function</h2><p>Mean \(e_f/e_\star\) over initial phase, precomputed on a grid with the quadrupole model. The ring marks your current \((\Lambda, e_0/e_\star)\).</p></div>
+          <div class="chart tall" id="ch-sw-hm"></div><div class="legend" id="lg-sw-hm"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== N-BODY LAB ============================== -->
+  <section id="tab-nbody" role="tabpanel" aria-labelledby="tb-nbody" hidden>
+    <div class="lab">
+      <form class="controls" id="nbForm" autocomplete="off">
+        <h3>Direct three-body integration</h3>
+        <p class="note">Star with isotropic mass loss \(M+m_p\propto e^{-t/2\tau}\), oblate planet (\(J_2\)), test moon. Fourth-order Yoshida symplectic integrator, full unexpanded stellar tide.</p>
+        <div class="presets">
+          <button type="button" data-nbpreset="quick">Quick check</button>
+          <button type="button" data-nbpreset="circ">Circular moon</button>
+          <button type="button" data-nbpreset="adiab">Near-adiabatic</button>
+        </div>
+        <div class="field"><label for="nb-eps">\(n_p/n_m\) <output id="nb-eps-o"></output></label><input type="range" id="nb-eps" min="-2.7" max="-1.5" step="0.01" value="-2"></div>
+        <div class="field"><label for="nb-lam">\(\Lambda\) <output id="nb-lam-o"></output></label><input type="range" id="nb-lam" min="-0.6" max="1.5" step="0.01" value="0.3"></div>
+        <div class="field"><label for="nb-e0">\(e_0/e_\star\) <output id="nb-e0-o"></output></label><input type="range" id="nb-e0" min="0" max="1" step="0.01" value="0.05"></div>
+        <div class="field"><label for="nb-ph">Initial phase \(\phi_0\) <output id="nb-ph-o"></output></label><input type="range" id="nb-ph" min="0" max="360" step="1" value="57"></div>
+        <div class="field"><label for="nb-rr">\(R_p/a_m\) <output id="nb-rr-o"></output></label><input type="range" id="nb-rr" min="0.2" max="0.6" step="0.01" value="0.33"></div>
+        <div class="field"><label for="nb-mp">\(m_p/M_\ast\) <output id="nb-mp-o"></output></label><input type="range" id="nb-mp" min="-4" max="-2" step="0.05" value="-3"></div>
+        <div class="field"><label for="nb-st">Steps per moon orbit <output id="nb-st-o"></output></label><input type="range" id="nb-st" min="100" max="400" step="10" value="200"></div>
+        <div class="field"><label for="nb-tide">Stellar tide</label><select id="nb-tide"><option value="full">Full (all multipoles)</option><option value="quad">Quadrupole only</option></select></div>
+        <div class="status-line" id="nb-cost"></div>
+        <div class="btn-row"><button type="submit" class="btn accent" id="nb-run">Integrate</button><button type="button" class="btn secondary" id="nb-cancel" disabled>Cancel</button></div>
+        <div class="progress" aria-hidden="true"><div id="nb-prog"></div></div>
+        <div class="status-line" id="nb-status"></div>
+      </form>
+      <div class="results">
+        <div class="stats" id="nb-stats"></div>
+        <div class="card">
+          <div class="card-head"><h2>N-body against the averaged theory</h2><p>Orbit-averaged osculating eccentricity of the moon (one point per moon orbit) and the secular prediction for identical parameters.</p></div>
+          <div class="chart tall" id="ch-nb-e"></div><div class="legend" id="lg-nb-e"></div>
+        </div>
+        <div class="two">
+          <div class="card"><div class="card-head"><h2>Resonant angle</h2><p>\(\phi=\varpi-\lambda_p\): circulates outside the band, stalls inside it.</p></div><div class="chart" id="ch-nb-phi"></div><div class="legend" id="lg-nb-phi"></div></div>
+          <div class="card"><div class="card-head"><h2>Adiabatic invariant</h2><p>Planet orbit under mass loss: \(a_p(M_\ast+m_p)\) should stay constant.</p></div><div class="chart" id="ch-nb-ad"></div><div class="legend" id="lg-nb-ad"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== RHEA ============================== -->
+  <section id="tab-rhea" role="tabpanel" aria-labelledby="tb-rhea" hidden>
+    <div class="lab">
+      <form class="controls" id="rhForm" autocomplete="off">
+        <h3>Saturn's moon Rhea</h3>
+        <p class="note">Free precession of Rhea today: 35.8 yr (93% from Saturn's \(J_2\), the rest from Titan, \(J_4\) and the inner moons). Saturn's year is 29.5 yr now and grows to about 94 yr as the Sun becomes a white dwarf.</p>
+        <div class="field"><label for="rh-eta">Reimers efficiency \(\eta\)</label><select id="rh-eta"><option value="0.3">0.30 (weak RGB wind)</option><option value="0.477" selected>0.477 (globular-cluster calibration)</option><option value="0.7">0.70 (strong RGB wind)</option></select></div>
+        <div class="field"><label for="rh-th">Saturn obliquity at the time <output id="rh-th-o"></output></label><input type="range" id="rh-th" min="0" max="75" step="0.5" value="26.73"><span class="hint">26.7° today; 55–65° predicted within 5 Gyr</span></div>
+        <div class="field"><label for="rh-fa">Rhea's orbit growth before then <output id="rh-fa-o"></output></label><input type="range" id="rh-fa" min="1" max="1.45" step="0.005" value="1"><span class="hint">tidal migration; beyond about 1.1× the crossing moves to the fast AGB wind</span></div>
+        <div class="field"><label for="rh-e0">Free eccentricity \(e_0\) <output id="rh-e0-o"></output></label><input type="range" id="rh-e0" min="0" max="0.003" step="0.00005" value="0.001"></div>
+        <label class="check"><input type="checkbox" id="rh-oct" checked> Include octupole tide</label>
+        <div class="field"><label for="rh-kq">Rhea \(k_2/Q\) <output id="rh-kq-o"></output></label><input type="range" id="rh-kq" min="-5" max="-2" step="0.05" value="-4"></div>
+        <div class="btn-row"><button type="submit" class="btn accent" id="rh-run">Simulate Rhea</button></div>
+        <div class="status-line" id="rh-status"></div>
+      </form>
+      <div class="results">
+        <div class="stats" id="rh-stats"></div>
+        <div class="card"><div class="card-head"><h2>The Sun's mass-loss history</h2><p>Semi-analytic track (Reimers wind on the RGB, Blöcker superwind on the AGB). The marker shows when Saturn's year equals Rhea's precession period.</p></div><div class="chart" id="ch-rh-m"></div><div class="legend" id="lg-rh-m"></div></div>
+        <div class="two">
+          <div class="card"><div class="card-head"><h2>Rhea through the crossing</h2><p>Four initial phases; time measured from the exact resonance.</p></div><div class="chart" id="ch-rh-e"></div><div class="legend" id="lg-rh-e"></div></div>
+          <div class="card"><div class="card-head"><h2>Distribution of final \(e\)</h2><p>64 initial phases.</p></div><div class="chart" id="ch-rh-h"></div><div class="legend" id="lg-rh-h"></div></div>
+        </div>
+        <div class="card"><div class="card-head"><h2>Tides versus wind</h2><p>Precomputed final eccentricity against Rhea's expansion before the crossing (present obliquity). Small expansion: the crossing falls on the slow RGB wind and the imprint is full. Larger expansion: it falls in the AGB superwind and the kick is weak, except inside the red-clump window.</p></div><div class="chart" id="ch-rh-race"></div><div class="legend" id="lg-rh-race"></div></div>
+        <div class="card"><div class="card-head"><h2>Which Solar System moons are swept?</h2><p>Laplace–Lagrange free precession periods (with \(J_2\), \(J_4\), mutual secular terms and the solar quadrupole) compared with each planet's present and final orbital period.</p></div><div class="table-wrap" id="rh-table"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== VERIFY ============================== -->
+  <section id="tab-verify" role="tabpanel" aria-labelledby="tb-verify" hidden>
+    <div class="card">
+      <div class="card-head"><h2>Verification suite</h2><p>Each test runs the same engine as the labs and compares a simulated number with the closed-form prediction (or the value quoted in the paper). Runs in a background thread; about 20–40 s in total.</p></div>
+      <div class="btn-row" style="margin-bottom:10px"><button type="button" class="btn accent" id="vf-run">Run all tests</button><span class="status-line" id="vf-status"></span></div>
+      <div class="progress" aria-hidden="true" style="margin-bottom:12px"><div id="vf-prog"></div></div>
+      <div class="table-wrap"><table id="vf-table"><thead><tr><th>Test</th><th>Prediction</th><th class="num">Expected</th><th class="num">Simulated</th><th class="num">Deviation</th><th class="num">Tolerance</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ============================== EQUATIONS ============================== -->
+  <section id="tab-eqs" role="tabpanel" aria-labelledby="tb-eqs" hidden>
+    <div class="eqs">
+      <div class="eq-block"><h3>1. Adiabatic stellar mass loss</h3><p>For \(t_M=M_\ast/|\dot M_\ast|\gg P_p\) the planet's orbit expands homologously and its mean motion falls steeply:</p>
+        <div class="math">\[ a_p M_\ast=\text{const},\qquad n_p=\sqrt{\frac{GM_\ast}{a_p^3}}\propto M_\ast^{2},\qquad \frac{\dot n_p}{n_p}=-\frac{2}{t_M}. \]</div></div>
+      <div class="eq-block"><h3>2. Apsidal precession of the moon</h3><p>Oblateness dominates for regular moons; other moons and \(J_4\) enter through \(g_{\rm ext}\):</p>
+        <div class="math">\[ \dot\varpi = \frac{3}{2}\,n_m J_2\Big(\frac{R_p}{a_m}\Big)^{2}(1-e^2)^{-2}+g_{\rm ext}+\frac{3}{4}\frac{n_p^2}{n_m}\sqrt{1-e^2}\,f_\theta,\qquad f_\theta=\frac{3\cos^2\theta-1}{2}. \]</div></div>
+      <div class="eq-block"><h3>3. Orbit-averaged stellar tide</h3><p>Quadrupole and octupole terms, averaged over the moon's orbit but not over the planet's, with \(\phi=\varpi-\lambda_p\):</p>
+        <div class="math">\[ \langle\mathcal H_2\rangle=-\frac{n_p^2a_m^2}{4}\Big[f_\theta\Big(1+\frac{3}{2}e^2\Big)+\frac{15}{2}\cos^4\!\frac{\theta}{2}\,e^2\cos2\phi\Big],\qquad \langle\mathcal H_3\rangle=-\frac{15}{16}\,n_p^2\frac{a_m^3}{a_p}\,f_{\rm oct}(\theta)\,e\cos\phi \]</div>
+        <div class="math">\[ f_{\rm oct}(\theta)=5\big(C_+^3+2C_+C_-^2\big)-4C_+,\qquad C_\pm=\frac{1\pm\cos\theta}{2}. \]</div></div>
+      <div class="eq-block"><h3>4. Equations of motion</h3><p>In non-singular variables \((h,k)=e(\cos\phi,\sin\phi)\):</p>
+        <div class="math">\[ \dot h=-k\,(W-C),\qquad \dot k=h\,(W+C)+F, \]</div>
+        <div class="math">\[ W=\dot\varpi(e)-n_p,\qquad C=\frac{15}{4}\frac{n_p^2}{n_m}\sqrt{1-e^2}\cos^4\!\frac{\theta}{2},\qquad F=\frac{15}{16}\frac{n_p^2}{n_m}\frac{a_m}{a_p}f_{\rm oct}(\theta)\sqrt{1-e^2}. \]</div></div>
+      <div class="eq-block"><h3>5. Normal form near resonance</h3><p>With \(x=e^2/2\), time in units of \(1/n_p\), detuning \(\delta=\dot\varpi_0/n_p-1+\tfrac34\varepsilon f_\theta\) and \(\varepsilon=n_p/n_m\):</p>
+        <div class="math">\[ K=\delta\,x+\beta x^2+c\,x\cos2\phi+\tilde F\sqrt{2x}\cos\phi,\qquad c=\frac{15}{4}\varepsilon\cos^4\!\frac{\theta}{2},\quad \beta=2f_{J_2}. \]</div>
+        <p>Circular orbits are parametrically unstable inside \(|\delta|<c\), with growth rate \(\sigma=\sqrt{c^2-\delta^2}\). Mass loss drives \(\dot\delta=2/(n_pt_M)>0\): the resonant islands shrink while the moon crosses them, so capture is forbidden.</p></div>
+      <div class="eq-block"><h3>6. Linear regime: Landau–Zener amplification</h3>
+        <div class="math">\[ \frac{\langle e_f^2\rangle_{\phi_0}}{e_0^2}=2e^{2\Lambda}-1,\qquad e^{\Lambda}-\sqrt{e^{2\Lambda}-1}\le\frac{e_f}{e_0}\le e^{\Lambda}+\sqrt{e^{2\Lambda}-1},\qquad \Lambda=\frac{\pi c^2}{2\dot\delta}. \]</div></div>
+      <div class="eq-block"><h3>7. Adiabatic regime: jump map and universal imprint</h3><p>The moon leaves the shrinking inner region when its area equals \(\pi e_0^2\); it lands on the outer region with the area enclosed by the outer separatrix. With \(q=|\delta_{\rm exit}|/c\):</p>
+        <div class="math">\[ e_0^2=\frac{e_\star^2}{2\pi}\Big[\pi q-2\sqrt{q-1}-2q\arcsin q^{-1/2}\Big],\qquad e_f^2=\frac{e_\star^2}{2\pi}\Big[\pi q+2\sqrt{q-1}+2q\arcsin q^{-1/2}\Big], \]</div>
+        <div class="math">\[ e_f\xrightarrow{e_0\to0}e_\star=\sqrt{2c/\beta},\qquad e_f\simeq e_0+\frac{2\sqrt2}{\pi}e_\star\quad(e_0\gg e_\star). \]</div></div>
+      <div class="eq-block"><h3>8. Octupole seeding of circular moons</h3><p>The first-order (parallactic) term forces an eccentricity even when \(e_0=0\); a stationary-phase estimate of the seed is</p>
+        <div class="math">\[ e_{\rm seed}\simeq\frac{1}{2}\,\frac{a_m}{a_p}\,\frac{|f_{\rm oct}(\theta)|}{\cos^4(\theta/2)}\,\sqrt{\Lambda}. \]</div></div>
+      <div class="eq-block"><h3>9. Tidal heating after the kick</h3>
+        <div class="math">\[ \dot E=\frac{21}{2}\frac{k_2}{Q}\frac{G M_p^2R_m^5\,n_m e^2}{a_m^6},\qquad \tau_e=\frac{4}{63}\frac{Q}{k_2}\frac{m_m}{M_p}\Big(\frac{a_m}{R_m}\Big)^5\frac{1}{n_m}. \]</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Engine: analytic theory, Dormand–Prince 5(4) secular integrator and Yoshida fourth-order N-body integrator, the same code that produced the paper's figures. Every run happens in your browser.</p>
+    <p>Units in the Sweep and N-body labs: time in \(1/n_p\) at resonance; eccentricities shown relative to \(e_\star\).</p>
+  </footer>
+</div>
+
+<script id="engine">
+/*
+ * evection engine — shared physics core for the paper (Node.js) and the
+ * interactive simulator (browser / Web Worker).
+ *
+ *  1. Analytic theory   : c, e_*, Lambda, Landau–Zener amplification, adiabatic jump map
+ *  2. Secular model     : orbit-averaged evection equations, Dormand–Prince 5(4)
+ *  3. Direct N-body     : star (mass-losing) + oblate planet + test moon, 4th-order
+ *                         Yoshida symplectic integrator in extended phase space
+ *
+ * Units for the generic problems: time in 1/n_p,res (the planet mean motion at
+ * resonance), so the planet orbital period at resonance is 2*pi.
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.Evection = factory();
+}(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+  var TWO_PI = 2 * Math.PI;
+
+  // ------------------------------------------------------------------ theory
+  function cWidth(eps, theta) { theta = theta || 0; return 3.75 * eps * Math.pow(Math.cos(theta / 2), 4); }
+  function eStar(eps, theta, fJ2) { fJ2 = fJ2 || 1; return Math.sqrt(cWidth(eps, theta) / fJ2); }
+  function lambdaAdiab(eps, npTM, theta) { var c = cWidth(eps, theta); return Math.PI * c * c * npTM / 4; }
+  function linearAmp(L) {
+    var A2 = Math.exp(Math.min(2 * L, 700)), B2 = A2 - 1;
+    return { meanSq: A2 + B2, rms: Math.sqrt(A2 + B2), lo: Math.sqrt(A2) - Math.sqrt(B2), hi: Math.sqrt(A2) + Math.sqrt(B2) };
+  }
+  function areasQ(q) {
+    var s = 2 * Math.sqrt(Math.max(q - 1, 0)) + 2 * q * Math.asin(1 / Math.sqrt(q));
+    return [Math.PI * q - s, Math.PI * q + s];
+  }
+  /* adiabatic jump map e0 -> e_f (non-capture sweep direction) */
+  function adiabaticMap(e0, es) {
+    var target = 2 * Math.PI * (e0 / es) * (e0 / es);
+    if (target <= 0) return es;
+    var lo = 1, hi = 2;
+    while (areasQ(hi)[0] < target) hi *= 2;
+    for (var i = 0; i < 200; i++) {
+      var mid = 0.5 * (lo + hi);
+      if (areasQ(mid)[0] < target) lo = mid; else hi = mid;
+    }
+    return es * Math.sqrt(areasQ(0.5 * (lo + hi))[1] / (2 * Math.PI));
+  }
+  /* frozen-parameter Hamiltonian (in units of L n_p), used for phase portraits */
+  function hamiltonian(e, phi, wJ2, wExt, eps, theta) {
+    theta = theta || 0;
+    var ft = 0.5 * (3 * Math.cos(theta) * Math.cos(theta) - 1), c4 = Math.pow(Math.cos(theta / 2), 4);
+    var e2 = e * e, s = Math.sqrt(1 - e2);
+    return wJ2 / 3 / (s * s * s) + (1 - wExt) * s + 0.25 * eps * (ft * (1 + 1.5 * e2) + 7.5 * c4 * e2 * Math.cos(2 * phi));
+  }
+
+  // ------------------------------------------------------- Dormand–Prince 5(4)
+  var A21 = 1 / 5,
+    A31 = 3 / 40, A32 = 9 / 40,
+    A41 = 44 / 45, A42 = -56 / 15, A43 = 32 / 9,
+    A51 = 19372 / 6561, A52 = -25360 / 2187, A53 = 64448 / 6561, A54 = -212 / 729,
+    A61 = 9017 / 3168, A62 = -355 / 33, A63 = 46732 / 5247, A64 = 49 / 176, A65 = -5103 / 18656,
+    B1 = 35 / 384, B3 = 500 / 1113, B4 = 125 / 192, B5 = -2187 / 6784, B6 = 11 / 84,
+    E1 = 71 / 57600, E3 = -71 / 16695, E4 = 71 / 1920, E5 = -17253 / 339200, E6 = 22 / 525, E7 = -1 / 40;
+
+  function dopri5(f, t0, y0, t1, tOut, opts, onOut) {
+    opts = opts || {};
+    var rtol = opts.rtol || 1e-10, atol = opts.atol || 1e-13, n = y0.length;
+    var y = Float64Array.from(y0), yt = new Float64Array(n), yn = new Float64Array(n);
+    var k1 = new Float64Array(n), k2 = new Float64Array(n), k3 = new Float64Array(n), k4 = new Float64Array(n),
+      k5 = new Float64Array(n), k6 = new Float64Array(n), k7 = new Float64Array(n);
+    var t = t0, hNat = opts.h0 || (t1 - t0) * 1e-6, h, iOut = 0, nsteps = 0, i;
+    f(t, y, k1);
+    while (iOut < tOut.length && tOut[iOut] <= t0) { onOut(iOut, t0, y); iOut++; }
+    while (t < t1 && nsteps < (opts.maxSteps || 5e7)) {
+      var tNext = iOut < tOut.length ? tOut[iOut] : t1;
+      var hit = false;
+      h = hNat;
+      if (t + h >= tNext) { h = tNext - t; hit = true; }
+      for (i = 0; i < n; i++) yt[i] = y[i] + h * A21 * k1[i];
+      f(t + h / 5, yt, k2);
+      for (i = 0; i < n; i++) yt[i] = y[i] + h * (A31 * k1[i] + A32 * k2[i]);
+      f(t + 0.3 * h, yt, k3);
+      for (i = 0; i < n; i++) yt[i] = y[i] + h * (A41 * k1[i] + A42 * k2[i] + A43 * k3[i]);
+      f(t + 0.8 * h, yt, k4);
+      for (i = 0; i < n; i++) yt[i] = y[i] + h * (A51 * k1[i] + A52 * k2[i] + A53 * k3[i] + A54 * k4[i]);
+      f(t + 8 / 9 * h, yt, k5);
+      for (i = 0; i < n; i++) yt[i] = y[i] + h * (A61 * k1[i] + A62 * k2[i] + A63 * k3[i] + A64 * k4[i] + A65 * k5[i]);
+      f(t + h, yt, k6);
+      for (i = 0; i < n; i++) yn[i] = y[i] + h * (B1 * k1[i] + B3 * k3[i] + B4 * k4[i] + B5 * k5[i] + B6 * k6[i]);
+      f(t + h, yn, k7);
+      var err = 0;
+      for (i = 0; i < n; i++) {
+        var sc = atol + rtol * Math.max(Math.abs(y[i]), Math.abs(yn[i]));
+        var ei = h * (E1 * k1[i] + E3 * k3[i] + E4 * k4[i] + E5 * k5[i] + E6 * k6[i] + E7 * k7[i]) / sc;
+        err += ei * ei;
+      }
+      err = Math.sqrt(err / n);
+      nsteps++;
+      if (err <= 1 || Math.abs(h) < 1e-14 * Math.abs(t1 - t0)) {
+        t += h; var tmp = y; y = yn; yn = tmp; var tk = k1; k1 = k7; k7 = tk;
+        if (hit) { onOut(iOut, t, y); iOut++; }
+        var fac = err === 0 ? 5 : Math.min(5, Math.max(0.2, 0.9 * Math.pow(err, -0.2)));
+        hNat = hit ? Math.max(hNat, h * fac) : h * fac;
+      } else {
+        hNat = h * Math.max(0.2, 0.9 * Math.pow(err, -0.2));
+      }
+    }
+    return { t: t, y: y, nsteps: nsteps };
+  }
+
+  // ------------------------------------------------------------- secular model
+  /*
+   * p: { npOf(t), nm, gJ2, gExt, theta, tauE }
+   * state y = [h0,k0,h1,k1,...] with (h,k) = e (cos phi, sin phi), phi = varpi - lambda_p
+   */
+  /* obliquity factor of the resonant octupole harmonic e cos(varpi - lambda_p), normalised to 1 at theta = 0 */
+  function fOct(theta) {
+    var cp = 0.5 * (1 + Math.cos(theta)), cm = 0.5 * (1 - Math.cos(theta));
+    return 5 * (cp * cp * cp + 2 * cp * cm * cm) - 4 * cp;
+  }
+
+  /*
+   * p.alphaOf(t) (optional) = a_m / a_p : enables the octupole (parallactic) forcing
+   *   dk/dt += F,  F = (15/16) (n_p^2/n_m) (a_m/a_p) f_oct(theta) sqrt(1-e^2)
+   */
+  function secularRHS(p) {
+    var th = p.theta || 0;
+    var ft = 0.5 * (3 * Math.cos(th) * Math.cos(th) - 1), c4 = Math.pow(Math.cos(th / 2), 4), fo = fOct(th);
+    var invTau = (p.tauE && isFinite(p.tauE)) ? 1 / p.tauE : 0;
+    return function (t, y, dy) {
+      var np = p.npOf(t), tid = np * np / p.nm;
+      var Fo = p.alphaOf ? 0.9375 * tid * p.alphaOf(t) * fo : 0;
+      for (var j = 0; j < y.length; j += 2) {
+        var h = y[j], k = y[j + 1];
+        var e2 = Math.min(h * h + k * k, 0.999999), s = Math.sqrt(1 - e2);
+        var W = p.gJ2 / ((1 - e2) * (1 - e2)) + p.gExt + 0.75 * tid * s * ft - np;
+        var C = 3.75 * tid * s * c4;
+        dy[j] = -k * (W - C) - h * invTau;
+        dy[j + 1] = h * (W + C) + Fo * s - k * invTau;
+      }
+    };
+  }
+
+  /*
+   * Initial state. proper = true (default): e0 is the *proper* free eccentricity, placed on the
+   * invariant ellipse of the frozen linear system at the start detuning,
+   *   (W+C) h^2 + (W-C) k^2 = const,  semi-axes e0*A, e0/A,  A = (|W-C|/|W+C|)^(1/4),
+   * and offset by the octupole-forced eccentricity h_f = -F/(W+C).  This removes the O(c/2|delta0|)
+   * start-up error of a finite integration window.  proper = false: osculating (h,k) = e0(cos,sin),
+   * which is what the direct N-body integrator is started with.
+   */
+  function initState(p, t0, e0s, phis, proper) {
+    var m = phis.length, y0 = new Float64Array(2 * m), A = 1, hf = 0;
+    if (proper !== false) {
+      var th = p.theta || 0, ft = 0.5 * (3 * Math.cos(th) * Math.cos(th) - 1), c4 = Math.pow(Math.cos(th / 2), 4);
+      var np = p.npOf(t0), tid = np * np / p.nm;
+      var W = p.gJ2 + p.gExt + 0.75 * tid * ft - np, C = 3.75 * tid * c4;
+      var F = p.alphaOf ? 0.9375 * tid * p.alphaOf(t0) * fOct(th) : 0;
+      if (Math.abs(W) > 1.05 * C) { A = Math.pow(Math.abs(W - C) / Math.abs(W + C), 0.25); hf = -F / (W + C); }
+    }
+    for (var j = 0; j < m; j++) { y0[2 * j] = hf + e0s[j] * A * Math.cos(phis[j]); y0[2 * j + 1] = e0s[j] / A * Math.sin(phis[j]); }
+    return y0;
+  }
+
+  /*
+   * Generic dimensionless sweep (time unit 1/n_p,res; resonance at t = 0):
+   *   n_p(t) = exp(-t / tau_n),  tau_n = 2 Lambda / (pi c^2)
+   * cfg: { eps, Lam, e0 (number or array), phi0 (array), theta, fJ2, K0, K1, nOut, tail, tauE }
+   * returns { x: (t/tau_n) samples, delta_over_c, e: [member][sample], ef: [member], c, tauN, eStar }
+   */
+  function secularSweep(cfg) {
+    var eps = cfg.eps, Lam = cfg.Lam, theta = cfg.theta || 0, fJ2 = cfg.fJ2 == null ? 1 : cfg.fJ2;
+    var K0 = cfg.K0 == null ? 7 : cfg.K0, K1 = cfg.K1 == null ? 12 : cfg.K1;
+    var nOut = cfg.nOut || 1500, tail = cfg.tail || 0.15;
+    var c = cWidth(eps, theta), tauN = 2 * Lam / (Math.PI * c * c);
+    var ft = 0.5 * (3 * Math.cos(theta) * Math.cos(theta) - 1);
+    var gTot = 1 - 0.75 * eps * ft;
+    var phis = cfg.phi0, m = phis.length;
+    var e0s = Array.isArray(cfg.e0) ? cfg.e0 : phis.map(function () { return cfg.e0; });
+    // dir = +1: mass loss (n_p decreasing, delta increasing, the non-capture direction)
+    // dir = -1: n_p increasing (inward migration / mass gain, the capture direction), for comparison
+    var dir = cfg.dir === -1 ? -1 : 1;
+    var p = { npOf: function (t) { return Math.exp(-dir * t / tauN); }, nm: 1 / eps, gJ2: fJ2 * gTot, gExt: (1 - fJ2) * gTot, theta: theta, tauE: cfg.tauE };
+    // octupole: a_m/a_p at resonance; a_p ~ 1/M ~ n_p^(-1/2) under adiabatic mass loss
+    if (cfg.alphaA) p.alphaOf = function (t) { return cfg.alphaA * Math.exp(-0.5 * dir * t / tauN); };
+    var t0 = -K0 * c * tauN, t1 = K1 * c * tauN, tOut = new Float64Array(nOut);
+    var y0 = initState(p, t0, e0s, phis, cfg.proper), j;
+    for (var i = 0; i < nOut; i++) tOut[i] = t0 + (t1 - t0) * i / (nOut - 1);
+    var E = [], PH = [];
+    for (j = 0; j < m; j++) { E.push(new Float64Array(nOut)); PH.push(new Float64Array(nOut)); }
+    dopri5(secularRHS(p), t0, y0, t1, tOut, { rtol: cfg.rtol || 1e-10, atol: 1e-14 }, function (io, t, y) {
+      for (var q = 0; q < m; q++) { var h = y[2 * q], k = y[2 * q + 1]; E[q][io] = Math.sqrt(h * h + k * k); PH[q][io] = Math.atan2(k, h); }
+    });
+    var nt = Math.max(10, Math.floor(tail * nOut)), ef = new Float64Array(m);
+    for (j = 0; j < m; j++) { var s2 = 0; for (i = nOut - nt; i < nOut; i++) s2 += E[j][i] * E[j][i]; ef[j] = Math.sqrt(s2 / nt); }
+    var x = new Float64Array(nOut), dc = new Float64Array(nOut);
+    for (i = 0; i < nOut; i++) { x[i] = tOut[i] / tauN; dc[i] = (gTot * Math.exp(dir * tOut[i] / tauN) - 1 + 0.75 * eps * Math.exp(-dir * tOut[i] / tauN) * ft) / c; }
+    return { x: x, deltaOverC: dc, e: E, phi: PH, ef: ef, c: c, tauN: tauN, eStar: eStar(eps, theta, fJ2) };
+  }
+
+  /*
+   * Physical secular run for a real moon. Frequencies in rad/yr, time in yr.
+   * Mass loss near the crossing is modelled locally as M = M_x exp(-(t - t_x)/t_M),
+   * so n_p = n_p,x exp(-2 (t - t_x)/t_M).
+   * cfg: { nm, gJ2, gExt, theta, tM, e0, phi0[], tauE, K0, K1, nOut }
+   */
+  function secularPhysical(cfg) {
+    var theta = cfg.theta || 0, ft = 0.5 * (3 * Math.cos(theta) * Math.cos(theta) - 1);
+    var g = cfg.gJ2 + cfg.gExt;
+    // n_p at resonance solves g + 0.75 n_p^2/nm ft = n_p (small correction, iterate)
+    var npx = g; for (var it = 0; it < 20; it++) npx = g + 0.75 * npx * npx / cfg.nm * ft;
+    var eps = npx / cfg.nm, fJ2 = cfg.gJ2 / g;
+    var c = cWidth(eps, theta), tauN = cfg.tM / 2;
+    var K0 = cfg.K0 == null ? 7 : cfg.K0, K1 = cfg.K1 == null ? 12 : cfg.K1;
+    // delta ~ (t/tauN) * npx-units -> window in time
+    var t0 = -K0 * c * tauN, t1 = K1 * c * tauN, nOut = cfg.nOut || 1500;
+    var p = { npOf: function (t) { return npx * Math.exp(-t / tauN); }, nm: cfg.nm, gJ2: cfg.gJ2, gExt: cfg.gExt, theta: theta, tauE: cfg.tauE };
+    if (cfg.alphaA) p.alphaOf = function (t) { return cfg.alphaA * Math.exp(-0.5 * t / tauN); };
+    var phis = cfg.phi0, m = phis.length, j;
+    var y0 = initState(p, t0, phis.map(function () { return cfg.e0; }), phis, cfg.proper);
+    var tOut = new Float64Array(nOut);
+    for (var i = 0; i < nOut; i++) tOut[i] = t0 + (t1 - t0) * i / (nOut - 1);
+    var E = []; for (j = 0; j < m; j++) E.push(new Float64Array(nOut));
+    dopri5(secularRHS(p), t0, y0, t1, tOut, { rtol: 1e-10, atol: 1e-14 }, function (io, t, y) {
+      for (var q = 0; q < m; q++) { var h = y[2 * q], k = y[2 * q + 1]; E[q][io] = Math.sqrt(h * h + k * k); }
+    });
+    var nt = Math.max(10, Math.floor(0.15 * nOut)), ef = new Float64Array(m);
+    for (j = 0; j < m; j++) { var s2 = 0; for (i = nOut - nt; i < nOut; i++) s2 += E[j][i] * E[j][i]; ef[j] = Math.sqrt(s2 / nt); }
+    return { t: tOut, e: E, ef: ef, eps: eps, c: c, fJ2: fJ2, npx: npx, eStar: eStar(eps, theta, fJ2),
+      Lam: lambdaAdiab(eps, npx * cfg.tM, theta) };
+  }
+
+  // ------------------------------------------------------------- direct N-body
+  /*
+   * Restricted planar three-body problem with isotropic stellar mass loss.
+   * G = 1, M0 + m_p = 1 + m_p, planet starts on a circular orbit at a_p = 1.
+   * Star+planet mass decays as (M + m_p) = (1 + m_p) exp(-t / (2 tau)), so that
+   * (adiabatically) n_p = n_p0 exp(-t / tau).  The moon is a test particle
+   * orbiting the oblate planet (J2) and feeling the full (non-expanded) stellar tide.
+   *
+   * cfg: { mp, eps, Lam, rRatio, e0, phi0, steps, K0, K1, tideOff, massLossOff,
+   *        tEnd (override, in units of 1/n_p,res), sampleEvery (moon orbits) }
+   */
+  function nbodySetup(cfg) {
+    var mp = cfg.mp || 1e-3, eps = cfg.eps, Lam = cfg.Lam, rRatio = cfg.rRatio || 1 / 3;
+    var K0 = cfg.K0 == null ? 6 : cfg.K0, K1 = cfg.K1 == null ? 9 : cfg.K1;
+    var c = cWidth(eps, 0);
+    var np0 = Math.sqrt(1 + mp);
+    var npRes = np0 * Math.exp(-K0 * c);
+    var tauN = 2 * Lam / (Math.PI * c * c) / npRes;          // code units
+    var tRes = K0 * c * tauN;
+    var nm = npRes / eps;
+    var am = Math.cbrt(mp / (nm * nm));
+    var R = rRatio * am;
+    var gTarget = npRes * (1 - 0.75 * eps);
+    var J2 = gTarget / (1.5 * nm * rRatio * rRatio);
+    var tEnd = cfg.tEnd != null ? cfg.tEnd / npRes : (K0 + K1) * c * tauN;
+    // planet semi-major axis at resonance (adiabatic: a_p ∝ 1/M, n_p ∝ M^2)
+    var apRes = Math.exp(0.5 * K0 * c);
+    return { mp: mp, eps: eps, c: c, np0: np0, npRes: npRes, tauN: tauN, tRes: tRes, nm: nm, am: am, R: R, J2: J2,
+      gTarget: gTarget, tEnd: tEnd, Pm: TWO_PI / nm, alphaA: am / apRes };
+  }
+
+  function nbodyRun(cfg, onProgress) {
+    var S = nbodySetup(cfg);
+    var mp = S.mp, J2R2 = S.J2 * S.R * S.R, tau = S.tauN;
+    var tideOn = !cfg.tideOff, lossOn = !cfg.massLossOff, quadOnly = !!cfg.quadOnly;
+    var steps = cfg.steps || 200, h = S.Pm / steps;
+    var nSteps = Math.ceil(S.tEnd / h);
+    var sampleEvery = cfg.sampleEvery || 1;
+    // initial conditions
+    var Xx = 1, Xy = 0, Vx = 0, Vy = S.np0;
+    var lm = (cfg.phi0 || 0) + Math.PI / 2;
+    var am = S.am, vc = Math.sqrt(mp / am + 1.5 * mp * J2R2 / (am * am * am));
+    var rx = am * Math.cos(lm), ry = am * Math.sin(lm);
+    var e0 = cfg.e0 || 0;
+    var vx = -vc * Math.sin(lm) + e0 * vc * Math.cos(lm), vy = vc * Math.cos(lm) + e0 * vc * Math.sin(lm);
+    var t = 0, M0 = 1 + mp;
+    var w1 = 1 / (2 - Math.cbrt(2)), w0 = -Math.cbrt(2) / (2 - Math.cbrt(2));
+    var W = [w1, w0, w1];
+    var ax = 0, ay = 0, Ax = 0, Ay = 0;
+    function force(tt) {
+      var Mtot = lossOn ? M0 * Math.exp(-tt / (2 * tau)) : M0;
+      var Ms = Mtot - mp;
+      var X2 = Xx * Xx + Xy * Xy, X1 = Math.sqrt(X2), X3 = X2 * X1;
+      Ax = -Mtot * Xx / X3; Ay = -Mtot * Xy / X3;
+      var r2 = rx * rx + ry * ry, r1 = Math.sqrt(r2), r3 = r2 * r1, r5 = r3 * r2;
+      var kk = mp / r3 + 1.5 * mp * J2R2 / r5;
+      ax = -kk * rx; ay = -kk * ry;
+      if (tideOn) {
+        if (quadOnly) {
+          // quadrupole tide only: (G M_s / X^3) [3 (r.Xhat) Xhat - r]
+          var q = Ms / X3, rX = (rx * Xx + ry * Xy) / X2;
+          ax += q * (3 * rX * Xx - rx); ay += q * (3 * rX * Xy - ry);
+        } else {
+          var Yx = Xx + rx, Yy = Xy + ry, Y2 = Yx * Yx + Yy * Yy, Y3 = Y2 * Math.sqrt(Y2);
+          ax += Ms * (Xx / X3 - Yx / Y3); ay += Ms * (Xy / X3 - Yy / Y3);
+        }
+      }
+    }
+    var out = { t: [], e: [], phi: [], dOverC: [], ap: [], ep: [], varpi: [] };
+    var sh = 0, sk = 0, cnt = 0, orbitCount = 0;
+    var progressEvery = Math.max(1, Math.floor(nSteps / 200));
+    for (var n = 0; n < nSteps; n++) {
+      for (var s = 0; s < 3; s++) {
+        var hh = W[s] * h;
+        Xx += 0.5 * hh * Vx; Xy += 0.5 * hh * Vy; rx += 0.5 * hh * vx; ry += 0.5 * hh * vy; t += 0.5 * hh;
+        force(t);
+        Vx += hh * Ax; Vy += hh * Ay; vx += hh * ax; vy += hh * ay;
+        Xx += 0.5 * hh * Vx; Xy += 0.5 * hh * Vy; rx += 0.5 * hh * vx; ry += 0.5 * hh * vy; t += 0.5 * hh;
+      }
+      // osculating Keplerian eccentricity vector about the planet
+      var r = Math.sqrt(rx * rx + ry * ry), v2 = vx * vx + vy * vy, rv = rx * vx + ry * vy;
+      var ex = ((v2 - mp / r) * rx - rv * vx) / mp, ey = ((v2 - mp / r) * ry - rv * vy) / mp;
+      sh += ex; sk += ey; cnt++;
+      if (cnt === steps) {
+        orbitCount++;
+        if (orbitCount % sampleEvery === 0) {
+          var mex = sh / cnt, mey = sk / cnt, e = Math.sqrt(mex * mex + mey * mey), vp = Math.atan2(mey, mex);
+          var lp = Math.atan2(Xy, Xx);
+          var Mtot = lossOn ? M0 * Math.exp(-t / (2 * tau)) : M0;
+          var Xr = Math.sqrt(Xx * Xx + Xy * Xy), V2 = Vx * Vx + Vy * Vy;
+          var apo = 1 / (2 / Xr - V2 / Mtot), np = Math.sqrt(Mtot / (apo * apo * apo));
+          var hP = Xx * Vy - Xy * Vx, epx = (V2 / Mtot - 1 / Xr) * Xx - (Xx * Vx + Xy * Vy) * Vx / Mtot,
+            epy = (V2 / Mtot - 1 / Xr) * Xy - (Xx * Vx + Xy * Vy) * Vy / Mtot;
+          var cNow = 3.75 * np / S.nm;
+          out.t.push((t - S.tRes) / S.tauN);
+          out.e.push(e); out.varpi.push(vp);
+          var ph = vp - lp; ph = Math.atan2(Math.sin(ph), Math.cos(ph)); out.phi.push(ph);
+          out.dOverC.push((S.gTarget / np - 1 + 0.75 * np / S.nm) / cNow);
+          out.ap.push(apo); out.ep.push(Math.sqrt(epx * epx + epy * epy));
+        }
+        sh = 0; sk = 0; cnt = 0;
+      }
+      if (onProgress && n % progressEvery === 0) onProgress(n / nSteps);
+    }
+    var N = out.e.length, nt = Math.max(5, Math.floor((cfg.tail || 0.12) * N)), s2 = 0;
+    for (var i = N - nt; i < N; i++) s2 += out.e[i] * out.e[i];
+    out.ef = Math.sqrt(s2 / nt);
+    out.setup = S;
+    out.eStar = eStar(S.eps, 0, 1);
+    out.nSteps = nSteps;
+    return out;
+  }
+
+  /* precession-rate test: no star tide, no mass loss; returns measured and predicted d(varpi)/dt */
+  function nbodyPrecessionTest(cfg) {
+    var c2 = Object.assign({}, cfg, { tideOff: true, massLossOff: true, Lam: cfg.Lam || 1 });
+    var S = nbodySetup(c2);
+    var nOrb = cfg.nOrb || 400;
+    c2.tEnd = nOrb * S.Pm * S.npRes;
+    var o = nbodyRun(c2);
+    // unwrap varpi, linear fit in physical code time
+    var vp = o.varpi.slice(), tt = o.t.map(function (x) { return x * S.tauN + S.tRes; });
+    for (var i = 1; i < vp.length; i++) { while (vp[i] - vp[i - 1] > Math.PI) vp[i] -= TWO_PI; while (vp[i] - vp[i - 1] < -Math.PI) vp[i] += TWO_PI; }
+    var n = vp.length, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (i = 0; i < n; i++) { sx += tt[i]; sy += vp[i]; sxx += tt[i] * tt[i]; sxy += tt[i] * vp[i]; }
+    var slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    var x = S.J2 * Math.pow(S.R / S.am, 2);
+    var pred1 = S.nm * 1.5 * x;
+    return { measured: slope, predicted: pred1, relErr: slope / pred1 - 1, J2R2overA2: x, meanE: o.e.reduce(function (a, b) { return a + b; }, 0) / n };
+  }
+
+  return {
+    cWidth: cWidth, eStar: eStar, lambdaAdiab: lambdaAdiab, linearAmp: linearAmp, adiabaticMap: adiabaticMap,
+    areasQ: areasQ, hamiltonian: hamiltonian, fOct: fOct, dopri5: dopri5, secularRHS: secularRHS, secularSweep: secularSweep,
+    secularPhysical: secularPhysical, nbodySetup: nbodySetup, nbodyRun: nbodyRun, nbodyPrecessionTest: nbodyPrecessionTest
+  };
+}));
+
+</script>
+<script id="data" type="application/json">{"tracks":{"0.3":{"t":[0,64274410,123880900,172024400,216675700,252743900,286199900,315019100,338303700,359907400,377365700,393567400,406663600,418820700,429302200,437779200,445652900,451166500,452023900,456067000,457944600,461435000,462738200,465196800,467196100,469063600,471047800,472661900,473749600,474170100,475186500,476155000,477077800,477957200,478631000,479437500,480206300,480939100,481637700,482303800,482939000,483425800,483779000,484345800,484886400,485095600,485601700,486084600,486545400,486723800,486898900,487155500,487322600,487567500,487727000,487960800,488113100,488262600,488481800,488624600,488833900,488970300,489170200,489300500,489428500,489616000,489738200,489917500,490034300,490205600,490317300,490426900,490587800,490692600,490846400,490946700,491093800,491189700,491283900,491422100,491512300,491644600,491730800,491857400,491940000,492021200,492140300,492218000,492332100,492406500,493029700,500729700,508979700,516679700,524929700,532629700,540879700,549129700,556829700,565079700,572779700,581029700,588729700,596979700,602573200,602697800,602841000,602935000,603072400,603121900,603191000,603275300,603333500,603422100,603502200,603561000,603602500,603628900,603667100,603726800,603771400,603803300,603853600,603900700,603936400,603962000,604002900,604041500,604056400,604092300,604125900,604156500,604179200,604195100,604220100,604229600,604243300,604260600,604273000,604292500,604310800,604324600,604334500,604341000,604350300,604365200,604376600,604384800,604397900,604410400,604420000,604426900,604438000,604448700,604452800,604462800,604472400,604481600,604490400,604497300,604502300,604505500,604510300,604518100,604524100,604528500,604535700,604542600,604547900,604551800,604558200,604564400,604566800,604572700,604578400,604584000,604588300,604591500,604596700,604598700,604601700,604605600,604608500,604613200,604617800,604621400,604624000,604625800,604628300,604632500,604635800,604638200,604642200,604646000,604649000,604651300,604654900,604658400,604659800,604663300,604666600,604669900,604672500,604674400,604677500,604678700,604680500,604682900,604684700,604687600,604690400,604692600,604694200,604695300,604696900,604699600,604701600,604703200,604705700,604708100,604710100,604711500,604713800,604716100,604717000,604719300,604721500,604723600,604725300,604726600,604728700,604729500,604730700,604732300,604733400,604735400,604737300,604738800,604740600,604742400,604744200,604746000,604747700,604749400,604750700,604752300,604754000,604755500,604757100,604758600,604760100,604761300,604762800,604764200,604765600,604767000,604768400,604769800,604770800,604772100,604773400,604774700,604776000,604777200,604778400,604779400,604780500,604781700,604782800,604784000,604785100,604786200,604787000,604788100,604789200,604790200,604791200,604792200,604793200,604794600,604795000,604795900,604796900,604797800,604798700,604799600,604800300,604801200,604802000,604802900,604803700,604804600,604805400,604806500,604807300,604807600,604808400,604809200,604809900,604811000,604812000,604813100,604814100,604815100,604816000,604817100,604818000,604818900,604819900,604820700,604821600,604822400,604823300,604824100,604824900,604825800,604826500,604827300,604828000,604828800,604829500,604830200,604831000,604831700,604832300,604833200,604833700,604834500,604834900,604835600,604836200,604837000,604837300,604837900,604838500,604839300,604839600,604840300,604840700,604841400,604841700,604842400,604842700,604843300,604843700,604844300,604844600,604845400,604845500,604846100,604846400,604847100,604847200,604847900,604848100,604848700,604848800,604849500,604849600,604850200,604850400,604851000,604851100,604851600,604851800,604852400,604853100,604853700,604854300,604854900,604855500,604856000,604856500,604857100,604857600,604858100,604858500,604859000,604859400,604859900,604860300,604860700,604861100,604861500,604861800,604862200,604862500,604862900,604863200,604863500,604863800,604864100,604864400,604864600,604864900,604865200,604865400,604865700,604865900,604866200,604866400,604866600,604866800,604867000,604867200,604867400,604867600,604867800,604867900,604868100,604868300,604868400,604868600,604868800,604868900,604869000,604869200,604869300,604869400,604869600,604869700,604869800,604869900,604870000,604870100,604870300,604870400,604870500,604870600,604870600,604870700,604870800,604870900,604871000,604871100,604871200,604871200,604871300,604871400,604871500,604871500,604871600,604871600,604871700,604871800,604871800,604871900,604871900,604872000,604872000,604872100,604872100,604872200,604872200,604872300,604872300,604872400,604872400,604872500,604872500,604872500,604872600,604872600,604872600,604872700,604872700,604872700,604872800,604872800,604872800,604872800,604872900,604872900,604872900,604873000,604873000,604873000],"M":[1,0.9998705,0.9997102,0.9995373,0.9993234,0.9990927,0.9988073,0.9984759,0.9981187,0.9976768,0.9972005,0.9966111,0.9959761,0.9951904,0.9942789,0.993297,0.9920825,0.9909724,0.9907743,0.9897226,0.9891565,0.9879368,0.9874141,0.9863049,0.9852598,0.9841399,0.9827616,0.981463,0.9804789,0.9800715,0.9790171,0.9779094,0.9767457,0.9755231,0.9745007,0.9731646,0.9717609,0.9702862,0.9687369,0.9671092,0.9653991,0.9639689,0.9628585,0.9609331,0.9589101,0.9580724,0.9559043,0.9536262,0.9512323,0.9502411,0.9492299,0.9476751,0.9466125,0.9449785,0.9438618,0.9421446,0.9409709,0.9397737,0.9379325,0.9366741,0.9347388,0.933416,0.9313816,0.9299911,0.9285724,0.9263904,0.9248989,0.9226047,0.9210364,0.918624,0.9169748,0.9152921,0.9127034,0.9109335,0.9082107,0.9063489,0.9034846,0.9015259,0.899527,0.8964511,0.8943476,0.8911106,0.8888966,0.8854893,0.8831586,0.8807793,0.877117,0.8746114,0.8707542,0.8681149,0.8653857,0.8649051,0.8643899,0.8639087,0.8633929,0.8629112,0.8623948,0.861878,0.8613955,0.8608782,0.860395,0.8598771,0.8593934,0.8588749,0.8579342,0.8570217,0.8557729,0.854816,0.8531898,0.8525299,0.8515316,0.8501865,0.8491687,0.8474582,0.8457334,0.8443455,0.8433007,0.8426026,0.8415537,0.8398015,0.8383972,0.8373431,0.8355854,0.8338279,0.8324229,0.83137,0.8296174,0.8278685,0.8271702,0.8254277,0.8236729,0.8218749,0.8204097,0.8192974,0.8174217,0.8166647,0.815523,0.8139905,0.8128346,0.8108978,0.8089509,0.807388,0.8062134,0.8054296,0.8042529,0.8022903,0.80072,0.7995426,0.7975821,0.7956247,0.7940619,0.792892,0.7909469,0.7890086,0.7882353,0.7863077,0.7843885,0.7824784,0.780578,0.7790649,0.7779344,0.7771829,0.776059,0.7741945,0.7727112,0.7716035,0.7697669,0.7679424,0.7664915,0.7654086,0.7636137,0.7618315,0.7611222,0.759358,0.7576068,0.7558686,0.7544875,0.7534572,0.7517507,0.7510718,0.7500574,0.7487124,0.7477093,0.746048,0.7444002,0.7430915,0.7421157,0.7414678,0.7404999,0.7388975,0.7376252,0.7366766,0.7351062,0.7335491,0.7323129,0.7313913,0.7298659,0.7283536,0.7277524,0.7262584,0.7247774,0.7233093,0.7221442,0.7212757,0.7198385,0.7192672,0.718414,0.7172836,0.716441,0.7150468,0.7136651,0.7125686,0.7117515,0.7112092,0.7103994,0.7090596,0.7079965,0.7072042,0.7058934,0.7045946,0.703564,0.7027961,0.7015256,0.7002668,0.6997665,0.6985239,0.6972927,0.6960729,0.6951053,0.6943842,0.6931914,0.6927174,0.6920097,0.6910723,0.6903739,0.6892184,0.6880738,0.6871658,0.6860405,0.6849256,0.6838213,0.6827273,0.6816437,0.6805702,0.6797188,0.6786635,0.6776183,0.6765829,0.6755574,0.6745415,0.6735354,0.6727373,0.6717483,0.6707687,0.6697985,0.6688375,0.6678856,0.6669429,0.6661952,0.6652686,0.664351,0.6634421,0.6625419,0.6616503,0.6607673,0.6600671,0.6591993,0.6583399,0.6574887,0.6566458,0.6558109,0.6549842,0.6543285,0.653516,0.6527114,0.6519145,0.6511254,0.6503438,0.6495699,0.6484989,0.6481956,0.6474424,0.6466966,0.6459579,0.6452265,0.6445021,0.6439277,0.6432159,0.6425111,0.6418131,0.6411219,0.6404375,0.6397596,0.6388218,0.6381597,0.6378967,0.6372436,0.6365969,0.6359565,0.6350704,0.6341964,0.6332122,0.6323635,0.6315265,0.6307008,0.6297711,0.6289694,0.6281787,0.6272883,0.6265207,0.6257635,0.6250167,0.6241757,0.6234506,0.6227355,0.6219302,0.6212359,0.6205512,0.6198758,0.6191153,0.6184596,0.617813,0.6170848,0.6164571,0.6158379,0.6149682,0.6145397,0.6137791,0.6133623,0.612704,0.6121365,0.6113393,0.6110248,0.6104032,0.6098674,0.6091146,0.6087438,0.6080856,0.6077249,0.6070143,0.6066642,0.6059744,0.6057022,0.6050313,0.6047008,0.6040495,0.6037287,0.6029717,0.6028472,0.6022324,0.6019296,0.6012149,0.6010974,0.6004023,0.6002311,0.5995564,0.5994455,0.5987354,0.5986278,0.5979909,0.597834,0.5972159,0.5971143,0.5965131,0.596365,0.5956856,0.5949784,0.5943371,0.5936696,0.5930217,0.5924342,0.5918226,0.5912681,0.5906909,0.5901675,0.5896227,0.589094,0.5886146,0.5881155,0.587663,0.5871921,0.586765,0.5863205,0.5858891,0.5854979,0.5850908,0.5847216,0.5843373,0.5839889,0.5836263,0.5832744,0.5829553,0.5826231,0.582322,0.5820085,0.5817243,0.5814285,0.5811414,0.5808812,0.5806102,0.5803646,0.5801089,0.5798771,0.5796359,0.5794017,0.5791894,0.5789685,0.5787681,0.5785596,0.5783706,0.5781738,0.5779828,0.5778097,0.5776295,0.5774661,0.5772961,0.577131,0.5769814,0.5768257,0.5766845,0.5765375,0.5764043,0.5762656,0.5761311,0.5760091,0.5758821,0.5757669,0.5756471,0.5755384,0.5754254,0.5753156,0.5752161,0.5751126,0.5750187,0.574921,0.5748324,0.5747402,0.5746507,0.5745696,0.5744851,0.5744086,0.5743289,0.5742567,0.5741815,0.5741085,0.5740424,0.5739735,0.5739111,0.5738461,0.5737872,0.5737259,0.5736664,0.5736125,0.5735564,0.5735055,0.5734525,0.5734045,0.5733545,0.573306,0.573262,0.5732162,0.5731747,0.5731315,0.5730924,0.5730516,0.5730121,0.5729762,0.5729389,0.572905,0.5728698,0.5728379,0.5728047,0.5727724,0.5727432,0.5727128,0.5726852,0.5716621],"L":[4.803843,5.679899,6.796261,8.034968,9.613197,11.36406,13.59437,16.26102,19.21824,22.98358,27.15777,32.47055,38.35761,45.84674,54.78721,64.68505,77.26338,89.04723,91.17726,102.6074,108.8429,122.4584,128.3639,141.0304,153.1192,166.2274,182.5637,198.1454,210.0674,215.0309,227.9481,241.6249,256.1039,271.4306,284.3339,301.3075,319.2678,338.2696,358.3701,379.6296,402.1111,421.0207,435.7651,461.456,488.6073,499.8939,529.2207,560.1998,592.9173,606.5111,620.4034,641.8145,656.4795,679.0789,694.5558,718.4035,734.7334,751.4162,777.1175,794.7134,821.8176,840.3714,868.9474,888.5059,908.4798,939.2366,960.2834,992.6876,1014.858,1048.988,1072.335,1096.168,1132.848,1157.935,1196.537,1222.934,1263.545,1291.311,1319.641,1363.215,1392.999,1438.801,1470.102,1518.227,1551.108,1584.64,1636.182,1671.387,1725.49,1762.437,45,45,45,45,45,45,45,45,45,45,45,45,45,45,640.9615,711.8209,803.2332,869.7298,977.0543,1018.859,1080.452,1160.627,1219.389,1314.907,1407.614,1479.899,1533.078,1568.058,1619.845,1704.406,1770.553,1819.328,1899.095,1977.04,2038.144,2083.269,2157.185,2229.548,2258.072,2328.366,2396.198,2459.762,2507.806,2542.337,2597.257,2618.365,2649.163,2688.706,2717.292,2763.038,2806.586,2839.964,2864.199,2879.995,2903.167,2940.47,2969.194,2990.123,3023.898,3056.37,3081.467,3099.803,3129.479,3158.11,3169.284,3196.553,3222.916,3248.422,3273.116,3292.317,3306.407,3315.656,3329.322,3351.557,3368.878,3381.607,3402.341,3422.497,3438.223,3449.793,3468.665,3487.041,3494.256,3511.971,3529.236,3546.071,3559.239,3568.945,3584.811,3591.051,3600.299,3612.426,3621.373,3636.009,3650.31,3661.519,3669.794,3675.249,3683.341,3696.591,3706.984,3714.661,3727.238,3739.55,3749.213,3756.356,3768.063,3779.532,3784.055,3795.202,3806.126,3816.836,3825.252,3831.478,3841.694,3845.726,3851.715,3859.595,3865.426,3874.999,3884.394,3891.784,3897.256,3900.87,3906.242,3915.065,3922.009,3927.151,3935.6,3943.899,3950.434,3955.275,3963.231,3971.049,3974.139,3981.77,3989.272,3996.648,4002.459,4006.766,4013.849,4016.649,4020.815,4026.305,4030.375,4037.071,4043.658,4048.851,4055.249,4061.544,4067.74,4073.838,4079.84,4085.748,4090.409,4096.153,4101.81,4107.379,4112.864,4118.265,4123.585,4127.783,4132.96,4138.06,4143.084,4148.034,4152.911,4157.717,4161.511,4166.191,4170.804,4175.35,4179.831,4184.248,4188.601,4192.04,4196.283,4200.467,4204.592,4208.659,4212.67,4216.624,4219.749,4223.606,4227.41,4231.161,4234.862,4238.512,4242.113,4247.072,4248.472,4251.938,4255.358,4258.732,4262.061,4265.346,4267.943,4271.15,4274.315,4277.439,4280.521,4283.564,4286.566,4290.705,4293.615,4294.768,4297.626,4300.447,4303.232,4307.071,4310.842,4315.07,4318.7,4322.265,4325.768,4329.697,4333.071,4336.386,4340.104,4343.297,4346.436,4349.521,4352.982,4355.955,4358.878,4362.157,4364.975,4367.746,4370.47,4373.527,4376.154,4378.738,4381.638,4384.13,4386.582,4390.014,4391.7,4394.685,4396.316,4398.886,4401.096,4404.191,4405.408,4407.81,4409.875,4412.768,4414.19,4416.708,4418.084,4420.79,4422.12,4424.734,4425.763,4428.295,4429.54,4431.987,4433.19,4436.022,4436.487,4438.778,4439.905,4442.558,4442.993,4445.564,4446.196,4448.683,4449.091,4451.698,4452.093,4454.424,4454.997,4457.252,4457.622,4459.808,4460.346,4462.808,4465.364,4467.674,4470.073,4472.395,4474.494,4476.674,4478.646,4480.693,4482.546,4484.469,4486.332,4488.018,4489.768,4491.353,4492.999,4494.488,4496.036,4497.535,4498.892,4500.302,4501.579,4502.906,4504.107,4505.355,4506.565,4507.66,4508.798,4509.829,4510.901,4511.871,4512.88,4513.858,4514.743,4515.664,4516.498,4517.365,4518.151,4518.967,4519.759,4520.476,4521.222,4521.898,4522.6,4523.237,4523.899,4524.541,4525.122,4525.727,4526.275,4526.845,4527.398,4527.899,4528.42,4528.892,4529.383,4529.828,4530.291,4530.739,4531.146,4531.569,4531.953,4532.352,4532.713,4533.089,4533.454,4533.785,4534.129,4534.44,4534.765,4535.059,4535.365,4535.661,4535.93,4536.21,4536.463,4536.727,4536.966,4537.215,4537.456,4537.675,4537.903,4538.109,4538.324,4538.518,4538.721,4538.917,4539.095,4539.28,4539.448,4539.623,4539.782,4539.946,4540.106,4540.251,4540.402,4540.539,4540.681,4540.81,4540.944,4541.075,4541.193,4541.316,4541.427,4541.543,4541.648,4541.757,4541.863,4541.959,4542.059,4542.15,0],"mdot":[1.770141e-12,2.339635e-12,3.154307e-12,4.168417e-12,5.618761e-12,7.423674e-12,1.000423e-11,1.347986e-11,1.780294e-11,2.398022e-11,3.166032e-11,4.262919e-11,5.625938e-11,7.571497e-11,1.018701e-10,1.343383e-10,1.806317e-10,2.288518e-10,2.380513e-10,2.898706e-10,3.198457e-10,3.893578e-10,4.211991e-10,4.928558e-10,5.654222e-10,6.485999e-10,7.586357e-10,8.700131e-10,9.593715e-10,9.976155e-10,1.099977e-9,1.212758e-9,1.337009e-9,1.473883e-9,1.59332e-9,1.756198e-9,1.935578e-9,2.133113e-9,2.35062e-9,2.590094e-9,2.85373e-9,3.083645e-9,3.268041e-9,3.599946e-9,3.965216e-9,4.121397e-9,4.539015e-9,4.998503e-9,5.504012e-9,5.720108e-9,5.944602e-9,6.297799e-9,6.544729e-9,6.933208e-9,7.204791e-9,7.632038e-9,7.930712e-9,8.240956e-9,8.728995e-9,9.070148e-9,9.606788e-9,9.981901e-9,1.057194e-8,1.098437e-8,1.141273e-8,1.20865e-8,1.255744e-8,1.329816e-8,1.381588e-8,1.463016e-8,1.519929e-8,1.579038e-8,1.672005e-8,1.736982e-8,1.839179e-8,1.910607e-8,2.022951e-8,2.101473e-8,2.183026e-8,2.311298e-8,2.400956e-8,2.541982e-8,2.640558e-8,2.79562e-8,2.904013e-8,3.016606e-8,3.193735e-8,3.317568e-8,3.512398e-8,3.648621e-8,6.239992e-11,6.243459e-11,6.247181e-11,6.25066e-11,6.254395e-11,6.257886e-11,6.261633e-11,6.265388e-11,6.268897e-11,6.272665e-11,6.276187e-11,6.279967e-11,6.283502e-11,6.287295e-11,6.943844e-9,8.135238e-9,9.765848e-9,1.101564e-8,1.31413e-8,1.40045e-8,1.531136e-8,1.707382e-8,1.84088e-8,2.065524e-8,2.292439e-8,2.475334e-8,2.613184e-8,2.705369e-8,2.844031e-8,3.076017e-8,3.262269e-8,3.402273e-8,3.636096e-8,3.870374e-8,4.058022e-8,4.198844e-8,4.433629e-8,4.668419e-8,4.762312e-8,4.996936e-8,5.60844e-8,6.274037e-8,6.817191e-8,7.230018e-8,7.927178e-8,8.208895e-8,8.6342e-8,9.205866e-8,9.637677e-8,1.036241e-7,1.109249e-7,1.167975e-7,1.212176e-7,1.241708e-7,1.286092e-7,1.360256e-7,1.419723e-7,1.464382e-7,1.538893e-7,1.613462e-7,1.673128e-7,1.717872e-7,1.792409e-7,1.866872e-7,1.89663e-7,1.97094e-7,2.045108e-7,2.11911e-7,2.192924e-7,2.251828e-7,2.295912e-7,2.325255e-7,2.369198e-7,2.442237e-7,2.500479e-7,2.544046e-7,2.616431e-7,2.688524e-7,2.745981e-7,2.788942e-7,2.860291e-7,2.931314e-7,2.959631e-7,3.030185e-7,3.100396e-7,3.170258e-7,3.225891e-7,3.267465e-7,3.336464e-7,3.363961e-7,3.405095e-7,3.459733e-7,3.500554e-7,3.568286e-7,3.635637e-7,3.689242e-7,3.729284e-7,3.755901e-7,3.79571e-7,3.861746e-7,3.914292e-7,3.953537e-7,4.018629e-7,4.083324e-7,4.134794e-7,4.173229e-7,4.236969e-7,4.300308e-7,4.325531e-7,4.388308e-7,4.450684e-7,4.512657e-7,4.561946e-7,4.598743e-7,4.65975e-7,4.68404e-7,4.720354e-7,4.768548e-7,4.804524e-7,4.864162e-7,4.923398e-7,4.970498e-7,5.005654e-7,5.029012e-7,5.063928e-7,5.121801e-7,5.167812e-7,5.202152e-7,5.259068e-7,5.315586e-7,5.360514e-7,5.394045e-7,5.449613e-7,5.504786e-7,5.526745e-7,5.581369e-7,5.635601e-7,5.689443e-7,5.732236e-7,5.764168e-7,5.817079e-7,5.838135e-7,5.869603e-7,5.911346e-7,5.942492e-7,5.994097e-7,6.045321e-7,6.086026e-7,6.136568e-7,6.186733e-7,6.236523e-7,6.28594e-7,6.334985e-7,6.383659e-7,6.422333e-7,6.470346e-7,6.517993e-7,6.565276e-7,6.612197e-7,6.658758e-7,6.704961e-7,6.741666e-7,6.787227e-7,6.832435e-7,6.877292e-7,6.921799e-7,6.965958e-7,7.00977e-7,7.044572e-7,7.087767e-7,7.13062e-7,7.173134e-7,7.215311e-7,7.257153e-7,7.298662e-7,7.33163e-7,7.372544e-7,7.413129e-7,7.453388e-7,7.493323e-7,7.532936e-7,7.572229e-7,7.603433e-7,7.642154e-7,7.68056e-7,7.718653e-7,7.756435e-7,7.793907e-7,7.831073e-7,7.882592e-7,7.897203e-7,7.933518e-7,7.969534e-7,8.005251e-7,8.040673e-7,8.075801e-7,8.103692e-7,8.138295e-7,8.17261e-7,8.206637e-7,8.24038e-7,8.273839e-7,8.307018e-7,8.352999e-7,8.38551e-7,8.398438e-7,8.430565e-7,8.462421e-7,8.494006e-7,8.537775e-7,8.581024e-7,8.62982e-7,8.671969e-7,8.713614e-7,8.754759e-7,8.801177e-7,8.841268e-7,8.880875e-7,8.925554e-7,8.96414e-7,9.002258e-7,9.039912e-7,9.082383e-7,9.119059e-7,9.155286e-7,9.196145e-7,9.231426e-7,9.266273e-7,9.300691e-7,9.339505e-7,9.373018e-7,9.406116e-7,9.443439e-7,9.475663e-7,9.507485e-7,9.552258e-7,9.574345e-7,9.613604e-7,9.635142e-7,9.669201e-7,9.698601e-7,9.739961e-7,9.756296e-7,9.788614e-7,9.816509e-7,9.855748e-7,9.875101e-7,9.909495e-7,9.92836e-7,9.965576e-7,9.98393e-7,0.000001002014,0.000001003444,0.000001006972,0.000001008713,0.000001012145,0.000001013838,0.000001017838,0.000001018496,0.000001021749,0.000001023354,0.000001027144,0.000001027767,0.00000103146,0.000001032371,0.000001035962,0.000001036553,0.000001040339,0.000001040914,0.000001044316,0.000001045154,0.000001048462,0.000001049006,0.000001052228,0.000001053022,0.00000105667,0.000001060473,0.000001063926,0.000001067526,0.000001071025,0.000001074203,0.000001077515,0.000001080522,0.000001083656,0.000001086502,0.000001089467,0.000001092349,0.000001094964,0.00000109769,0.000001100164,0.000001102743,0.000001105083,0.000001107521,0.000001109889,0.000001112039,0.000001114279,0.000001116311,0.000001118428,0.00000112035,0.000001122351,0.000001124296,0.00000112606,0.000001127897,0.000001129565,0.000001131301,0.000001132877,0.000001134518,0.000001136112,0.000001137558,0.000001139064,0.00000114043,0.000001141853,0.000001143144,0.000001144488,0.000001145793,0.000001146977,0.00000114821,0.000001149329,0.000001150494,0.00000115155,0.00000115265,0.000001153718,0.000001154687,0.000001155696,0.000001156611,0.000001157564,0.000001158489,0.000001159328,0.000001160201,0.000001160993,0.000001161818,0.000001162566,0.000001163345,0.000001164101,0.000001164787,0.000001165501,0.000001166148,0.000001166822,0.000001167434,0.00000116807,0.000001168688,0.000001169248,0.000001169831,0.00000117036,0.000001170911,0.00000117141,0.00000117193,0.000001172434,0.000001172892,0.000001173368,0.0000011738,0.00000117425,0.000001174657,0.000001175082,0.000001175494,0.000001175867,0.000001176256,0.000001176608,0.000001176975,0.000001177308,0.000001177655,0.000001177991,0.000001178296,0.000001178613,0.000001178901,0.0000011792,0.000001179472,0.000001179755,0.000001180029,0.000001180278,0.000001180537,0.000001180772,0.000001181016,0.000001181238,0.000001181468,0.000001181692,0.000001181895,0.000001182107,0.000001182298,0.000001182498,0.000001182678,0.000001182867,0.000001183049,0.000001183215,0.000001183387,0.000001183543,0],"phase":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4]},"0.477":{"t":[0,59974860,116438600,165550900,208270800,245432400,277760700,305886100,330357000,351650000,370179500,386305800,400342400,412561700,421769300,423200500,431218500,432464900,437779200,440534000,445163400,447563500,450731500,453688900,456449900,459027800,461435000,463056200,463682800,465196800,467196100,467742800,469063600,470075000,471285200,472438000,473320800,473960800,474377300,475384000,476155000,476714000,477077800,477957200,478631000,479119500,479437500,480055400,480503600,480795300,481081500,481500700,481773500,482041200,482433300,482688500,482939000,483305800,483544600,483779000,484122200,484345800,484565100,484886400,485095600,485300900,485601700,485797600,485989900,486271500,486455000,486635000,486898900,487070700,487239400,487486600,487647600,487805700,488037300,488188200,488336400,488553500,488695000,488833900,489037600,489170200,489300500,489491500,489616000,489738200,489917500,490034300,490149000,490317300,490426900,490534600,490692600,490795600,490896800,491045200,491141900,491236200,491370300,491455000,491536400,491652400,491726100,491797000,491898600,491963200,492025600,492115200,492172400,492227700,492307400,492358300,492407700,492479000,499629000,507329000,515029000,522729000,530429000,538129000,545829000,553529000,561229000,568929000,576629000,584329000,592029000,599729000,602530800,602647800,602690300,602787900,602858300,602907300,602938300,603011000,603064600,603102500,603126700,603184200,603227100,603257800,603277600,603324700,603360400,603386000,603402500,603442300,603472600,603494400,603508600,603542900,603569000,603588000,603600400,603630300,603653300,603670000,603680900,603707400,603727800,603742600,603752300,603776000,603794200,603807600,603816300,603837600,603854100,603866200,603874100,603893400,603908400,603926500,603940700,603951000,603964600,603974500,603987400,603996900,604009400,604018500,604030400,604039200,604050600,604059100,604070100,604078200,604088800,604096600,604106900,604114400,604124200,604131500,604141000,604148000,604157200,604164000,604172900,604179400,604188000,604194300,604202600,604212800,604222700,604230500,604240000,604249300,604256600,604265600,604274400,604281200,604289700,604297900,604304200,604311900,604317900,604325100,604332100,604337600,604344200,604350600,604355600,604361700,604367600,604372200,604377800,604383200,604387500,604392700,604397700,604401700,604406500,604411200,604414800,604419300,604423700,604427100,604431300,604435400,604438600,604442500,604446300,604449300,604453000,604456600,604459400,604462800,604466200,604468800,604472100,604475300,604477700,604480800,604485000,604486100,604489000,604493000,604494100,604496800,604500500,604501600,604504200,604507700,604508700,604511100,604514500,604515400,604517800,604520900,604521800,604524100,604527100,604527900,604530000,604532900,604533700,604535700,604538500,604539200,604541100,604543700,604544500,604546300,604548800,604549500,604551900,604554300,604556600,604558800,604561100,604563200,604565300,604567400,604569400,604571400,604573300,604575200,604577100,604578900,604580700,604582400,604584100,604585800,604587400,604589000,604590600,604592200,604593700,604595200,604596600,604598000,604599800,604600800,604602500,604603300,604605100,604605800,604607600,604608300,604610000,604610700,604612300,604613000,604614600,604615200,604616700,604617300,604618800,604619400,604620800,604621400,604622700,604623300,604624600,604625100,604626400,604626900,604628100,604628600,604630100,604630300,604631700,604631900,604633200,604633400,604634700,604634900,604636200,604636400,604637600,604637800,604638900,604639100,604640400,604641700,604642900,604644100,604645300,604646400,604647400,604648500,604649500,604650500,604651400,604652300,604653200,604654100,604654900,604655700,604656500,604657200,604657900,604658600,604659300,604660000,604660600,604661300,604661900,604662500,604663000,604663600,604664100,604664700,604665200,604665700,604666100,604666600,604667100,604667500,604667900,604668300,604668700,604669100,604669500,604669900,604670200,604670600,604670900,604671200,604671500,604671800,604672100,604672400,604672700,604673000,604673200,604673500,604673800,604674000,604674200,604674400,604674700,604674900,604675100,604675300,604675500,604675700,604675900,604676100,604676200,604676400,604676600,604676700,604676900,604677000,604677200,604677300,604677500,604677600,604677800,604677900,604678000,604678100,604678200,604678400,604678500,604678600,604678700,604678800,604678900,604679000,604679100,604679200,604679300,604679300,604679400,604679500,604679600,604679700,604679700,604679800,604679900,604680000,604680000,604680100,604680100,604680200,604680300,604680300,604680400,604680400,604680500,604680500,604680600,604680600,604680700,604680700,604680800,604680800,604680900,604680900],"M":[1,0.9998098,0.9995754,0.9993059,0.9989961,0.99864,0.9982307,0.9977602,0.9972193,0.9965977,0.9958831,0.9950619,0.9941179,0.9930331,0.9919752,0.9917863,0.9905704,0.9903533,0.9893211,0.9887064,0.98752,0.9868136,0.9857636,0.984638,0.9834313,0.9821374,0.9807503,0.9796986,0.979263,0.9781354,0.9764592,0.9759585,0.974662,0.9735773,0.972159,0.9706682,0.9694207,0.9684519,0.9677897,0.966075,0.9646401,0.9635256,0.9627637,0.960791,0.95914,0.9578575,0.9569808,0.9551736,0.9537697,0.95281,0.9518307,0.9503242,0.9492943,0.9482434,0.9466267,0.9455214,0.9443935,0.9426582,0.9414717,0.940261,0.9383981,0.9371243,0.9358243,0.9338241,0.9324563,0.9310603,0.9289121,0.927443,0.9259435,0.9236359,0.9220576,0.9204466,0.917967,0.9162709,0.9145395,0.9118743,0.9100511,0.9081896,0.9053241,0.9033634,0.9013615,0.8982792,0.8961699,0.894016,0.8906992,0.888429,0.8861105,0.8825395,0.8800949,0.8775979,0.8737511,0.8711172,0.8684263,0.8642798,0.8614401,0.8585382,0.8540655,0.8510015,0.8478698,0.8430413,0.8397325,0.8363769,0.8313687,0.8280465,0.8247377,0.8197991,0.8165232,0.8132604,0.8083906,0.8051602,0.8019428,0.7971408,0.7939554,0.7907828,0.7860475,0.7829065,0.779778,0.7751087,0.7743163,0.773462,0.7726068,0.7717507,0.7708936,0.7700356,0.7691766,0.7683166,0.7674557,0.7665938,0.7657309,0.7648671,0.7640022,0.7631364,0.7622455,0.7607782,0.7601866,0.7586986,0.7575007,0.7565989,0.7559964,0.7544869,0.753277,0.7523687,0.751763,0.7502487,0.7490379,0.7481307,0.7475263,0.7460176,0.7448133,0.7439119,0.7433119,0.7418156,0.7406226,0.7397304,0.7391368,0.7376576,0.7364792,0.7355985,0.7350129,0.7335541,0.7323927,0.7315251,0.7309484,0.7295125,0.7283699,0.7275166,0.7269496,0.7255382,0.7244156,0.7235775,0.7230206,0.721635,0.7205333,0.719711,0.7191648,0.7178058,0.7167256,0.7153841,0.7143179,0.7135224,0.7124672,0.71168,0.7106359,0.709857,0.708824,0.7080534,0.7070315,0.7062693,0.7052586,0.7045047,0.7035051,0.7027595,0.7017711,0.7010339,0.7000565,0.6993276,0.6983613,0.6976408,0.6966855,0.6959732,0.695029,0.6943249,0.6933916,0.6926957,0.6917733,0.6910856,0.690174,0.6890432,0.687922,0.687032,0.6859279,0.6848334,0.6839645,0.6828868,0.6818185,0.6809705,0.6799188,0.6788733,0.6780402,0.6770032,0.6761772,0.6751494,0.674127,0.6733131,0.672301,0.6712948,0.6704942,0.6694989,0.66851,0.6677234,0.6667461,0.6657752,0.6650034,0.6640445,0.6630924,0.6623356,0.6613958,0.6604629,0.6597215,0.6588011,0.6578876,0.6571618,0.6562609,0.655367,0.654657,0.6537757,0.6529015,0.6522072,0.6513456,0.650491,0.6498123,0.6489703,0.6481353,0.6474723,0.6466498,0.6458342,0.6451866,0.6443834,0.6432704,0.6429549,0.6421708,0.6410843,0.6407764,0.6400111,0.638951,0.6386504,0.6379038,0.6368695,0.6365763,0.635848,0.6348392,0.6345532,0.6338429,0.6328591,0.6325803,0.6318877,0.6309285,0.6306566,0.6299814,0.6290463,0.6287813,0.6281231,0.6272116,0.6269534,0.6263118,0.6254236,0.6251719,0.6245468,0.6236812,0.623436,0.6225848,0.6217446,0.6209153,0.6200968,0.6192889,0.6184916,0.6177047,0.6169281,0.6161617,0.6154053,0.6146589,0.6139223,0.6131955,0.6124782,0.6117704,0.611072,0.6103829,0.6097029,0.6090319,0.6083699,0.6077166,0.6070721,0.6064362,0.6058088,0.6051898,0.604579,0.6038058,0.603382,0.6026294,0.602299,0.6014843,0.6011628,0.6003698,0.6000569,0.5992852,0.5989807,0.5982297,0.5979333,0.5972024,0.596914,0.5962028,0.5959221,0.59523,0.5949569,0.5942835,0.5940177,0.5933624,0.5931038,0.5924662,0.5922146,0.5915942,0.5913494,0.5907458,0.5905076,0.5898042,0.5896886,0.5890043,0.5888918,0.588226,0.5881165,0.5874688,0.5873623,0.5867321,0.5866286,0.5860155,0.5859147,0.5853183,0.5852203,0.5845448,0.5838876,0.5832483,0.5826265,0.5820216,0.5814332,0.5808608,0.580304,0.5797625,0.5792357,0.5787234,0.578225,0.5777403,0.5772688,0.5768103,0.5763643,0.5759305,0.5755383,0.5751271,0.5747272,0.5743383,0.57396,0.5735921,0.5732343,0.5728863,0.5725478,0.5722187,0.5718986,0.5715872,0.5712845,0.57099,0.5707036,0.5704252,0.5701543,0.5698909,0.5696348,0.5693857,0.5691434,0.5689078,0.5686787,0.5684559,0.5682393,0.5680286,0.5678237,0.5676244,0.5674306,0.5672422,0.5670589,0.5668807,0.5667074,0.5665389,0.5663751,0.5662157,0.5660607,0.56591,0.5657738,0.565631,0.5654922,0.5653571,0.5652258,0.5650982,0.564974,0.5648533,0.5647358,0.5646217,0.5645106,0.5644027,0.5642977,0.5641956,0.5640964,0.5639998,0.563906,0.5638147,0.5637259,0.5636396,0.5635557,0.5634741,0.5633947,0.5633175,0.5632425,0.5631695,0.5630986,0.5630296,0.5629625,0.5628973,0.5628338,0.5627721,0.5627122,0.5626538,0.5625971,0.562542,0.5624883,0.5624399,0.5623891,0.5623396,0.5622916,0.5622449,0.5621995,0.5621553,0.5621123,0.5620706,0.56203,0.5619905,0.5619521,0.5619147,0.5618784,0.5618431,0.5618088,0.5617754,0.561743,0.5617114,0.5616807,0.5616509,0.5616219,0.5615936,0.5615662,0.5615395,0.5605185],"L":[4.803843,5.612348,6.635608,7.845086,9.274559,10.96389,12.96012,15.31872,18.10513,21.39647,25.28359,29.87351,35.29217,41.68772,48.07835,49.23429,56.77302,58.13643,64.68505,68.63412,76.35417,81.00874,88.00077,95.58974,103.8256,112.7624,122.4584,129.8836,132.9766,141.0304,153.1192,156.7569,166.2274,174.2073,184.7136,195.842,205.2164,212.535,217.5556,230.6214,241.6249,250.2132,256.1039,271.4306,284.3339,294.4026,301.3075,315.5943,326.7404,334.3832,342.1999,354.2593,362.5273,370.9827,384.026,392.9677,402.1111,416.2141,425.881,435.7651,451.0086,461.456,472.137,488.6073,499.8939,511.4317,529.2207,541.4093,553.8677,573.0732,586.2305,599.6773,620.4034,634.6001,649.1074,671.4644,686.7757,702.4199,726.5248,743.0302,759.8922,785.8687,803.6525,821.8176,849.7965,868.9474,888.5059,918.6249,939.2366,960.2834,992.6876,1014.858,1037.493,1072.335,1096.168,1120.496,1157.935,1183.538,1209.668,1249.871,1277.358,1305.177,1346.584,1373.972,1401.185,1441.677,1468.451,1495.049,1534.615,1560.77,1586.749,1625.383,1650.918,1676.275,1713.979,1738.893,1763.632,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,619.0932,683.6971,708.8413,770.1109,817.6105,852.417,875.2523,931.1198,974.6294,1006.611,1027.636,1079.204,1119.486,1149.157,1168.689,1216.682,1254.249,1281.962,1300.224,1345.154,1380.379,1406.393,1423.549,1465.8,1498.965,1523.481,1539.657,1579.529,1610.858,1634.031,1649.33,1687.064,1716.736,1738.698,1753.203,1788.997,1817.163,1838.02,1851.8,1885.821,1912.607,1932.451,1945.565,1977.956,2003.471,2034.879,2059.628,2077.972,2102.149,2120.073,2143.699,2161.217,2184.311,2201.437,2224.016,2240.763,2262.846,2279.226,2300.828,2316.854,2337.99,2353.672,2374.357,2389.706,2409.954,2424.979,2444.803,2459.515,2478.927,2493.335,2512.347,2526.46,2545.083,2558.908,2577.155,2599.666,2621.854,2639.376,2660.998,2682.314,2699.151,2719.93,2740.42,2756.606,2776.585,2796.112,2811.344,2829.916,2844.414,2862.105,2879.335,2892.8,2909.247,2925.284,2937.828,2953.165,2968.135,2979.854,2994.196,3008.205,3019.182,3032.625,3045.767,3056.072,3068.7,3081.055,3090.749,3102.636,3114.273,3123.41,3134.619,3145.601,3154.227,3164.815,3175.194,3183.351,3193.368,3203.193,3210.917,3220.408,3229.72,3237.045,3246.048,3254.886,3261.841,3270.392,3282.108,3285.401,3293.532,3304.677,3307.811,3315.552,3326.165,3329.15,3336.525,3346.642,3349.488,3356.522,3366.173,3368.89,3375.603,3384.819,3387.414,3393.827,3402.633,3405.113,3411.244,3419.666,3422.038,3427.903,3435.963,3438.233,3443.848,3451.566,3453.74,3459.119,3466.514,3468.598,3475.794,3482.842,3489.744,3496.505,3503.128,3509.617,3515.976,3522.208,3528.316,3534.304,3540.174,3545.929,3551.572,3557.107,3562.534,3567.859,3573.081,3578.205,3583.232,3588.165,3593.006,3597.756,3602.419,3606.996,3611.489,3615.9,3621.453,3624.482,3629.837,3632.177,3637.922,3640.179,3645.722,3647.9,3653.248,3655.35,3660.512,3662.541,3667.525,3669.484,3674.297,3676.189,3680.838,3682.666,3687.157,3688.923,3693.263,3694.97,3699.165,3700.814,3704.869,3706.464,3710.385,3711.927,3716.466,3717.21,3721.6,3722.32,3726.567,3727.263,3731.373,3732.047,3736.023,3736.675,3740.524,3741.155,3744.88,3745.491,3749.69,3753.755,3757.691,3761.503,3765.196,3768.774,3772.24,3775.598,3778.852,3782.006,3785.063,3788.027,3790.899,3793.684,3796.385,3799.004,3801.543,3803.832,3806.226,3808.549,3810.801,3812.986,3815.107,3817.164,3819.16,3821.096,3822.976,3824.8,3826.57,3828.289,3829.956,3831.575,3833.147,3834.672,3836.154,3837.592,3838.988,3840.343,3841.66,3842.938,3844.179,3845.384,3846.555,3847.692,3848.796,3849.868,3850.91,3851.922,3852.904,3853.859,3854.786,3855.687,3856.562,3857.412,3858.238,3858.984,3859.765,3860.524,3861.261,3861.978,3862.674,3863.35,3864.007,3864.646,3865.267,3865.87,3866.456,3867.025,3867.578,3868.116,3868.639,3869.147,3869.64,3870.12,3870.586,3871.039,3871.48,3871.908,3872.324,3872.728,3873.121,3873.503,3873.874,3874.235,3874.586,3874.927,3875.258,3875.58,3875.893,3876.198,3876.493,3876.781,3877.041,3877.313,3877.578,3877.835,3878.085,3878.328,3878.565,3878.794,3879.018,3879.235,3879.446,3879.651,3879.851,3880.045,3880.233,3880.417,3880.595,3880.768,3880.936,3881.1,3881.259,3881.414,3881.565,3881.711,3881.853,0],"mdot":[2.814524e-12,3.646902e-12,4.820267e-12,6.370702e-12,8.419179e-12,1.11254e-11,1.470015e-11,1.942158e-11,2.565668e-11,3.388954e-11,4.475855e-11,5.910537e-11,7.803939e-11,1.030225e-10,1.306954e-10,1.359804e-10,1.724793e-10,1.794491e-10,2.144564e-10,2.367675e-10,2.829194e-10,3.123297e-10,3.586937e-10,4.119171e-10,4.730108e-10,5.431338e-10,6.236153e-10,6.882795e-10,7.159789e-10,7.901858e-10,9.071239e-10,9.435971e-10,1.041302e-9,1.126676e-9,1.243266e-9,1.371876e-9,1.484246e-9,1.574502e-9,1.637691e-9,1.806943e-9,1.954811e-9,2.073573e-9,2.156717e-9,2.379407e-9,2.573951e-9,2.730195e-9,2.839577e-9,3.071624e-9,3.257987e-9,3.388452e-9,3.524128e-9,3.737871e-9,3.887504e-9,4.043114e-9,4.288261e-9,4.45988e-9,4.638354e-9,4.919523e-9,5.116362e-9,5.321066e-9,5.643563e-9,5.869338e-9,6.104139e-9,6.47406e-9,6.733044e-9,7.002387e-9,7.426745e-9,7.723851e-9,8.032852e-9,8.519716e-9,8.860601e-9,9.215152e-9,9.773818e-9,1.0165e-8,1.057189e-8,1.121308e-8,1.166209e-8,1.212916e-8,1.286526e-8,1.338078e-8,1.391709e-8,1.476242e-8,1.535452e-8,1.597057e-8,1.694172e-8,1.762206e-8,1.833002e-8,1.944628e-8,2.022844e-8,2.104248e-8,2.232629e-8,2.322607e-8,2.416273e-8,2.564032e-8,2.667622e-8,2.775484e-8,2.945697e-8,3.065071e-8,3.189405e-8,3.385692e-8,3.523411e-8,3.665733e-8,3.883099e-8,4.030551e-8,4.179999e-8,4.407846e-8,4.56215e-8,4.718345e-8,4.95612e-8,5.116919e-8,5.279511e-8,5.526705e-8,5.693668e-8,5.862335e-8,6.118478e-8,6.291301e-8,6.465745e-8,1.107716e-10,1.108849e-10,1.110074e-10,1.111303e-10,1.112535e-10,1.113772e-10,1.115013e-10,1.116259e-10,1.117508e-10,1.118762e-10,1.12002e-10,1.121282e-10,1.122548e-10,1.123819e-10,1.125094e-10,1.17962e-8,1.371642e-8,1.449127e-8,1.644235e-8,1.801523e-8,1.920063e-8,1.999324e-8,2.198162e-8,2.357804e-8,2.477793e-8,2.557885e-8,2.758376e-8,2.918954e-8,3.039446e-8,3.119786e-8,3.320623e-8,3.481219e-8,3.60159e-8,3.68179e-8,3.882085e-8,4.042068e-8,4.161883e-8,4.241669e-8,4.440792e-8,4.599706e-8,4.718649e-8,4.797823e-8,4.99531e-8,5.152818e-8,5.270653e-8,5.349065e-8,5.54457e-8,5.700416e-8,5.816965e-8,5.894501e-8,6.087756e-8,6.241745e-8,6.35687e-8,6.433442e-8,6.624242e-8,6.776222e-8,6.889816e-8,6.965356e-8,7.15354e-8,7.303393e-8,7.489828e-8,7.638263e-8,7.74917e-8,7.89648e-8,8.006536e-8,8.152704e-8,8.261898e-8,8.406909e-8,8.51523e-8,8.659072e-8,8.766511e-8,8.909171e-8,9.015721e-8,9.157191e-8,9.262844e-8,9.403114e-8,9.507866e-8,9.64693e-8,9.750775e-8,9.888628e-8,9.991562e-8,1.01282e-7,1.023022e-7,1.036563e-7,1.046674e-7,1.060093e-7,1.070112e-7,1.083409e-7,1.093335e-7,1.10651e-7,1.122879e-7,1.139139e-7,1.152068e-7,1.168131e-7,1.184085e-7,1.196769e-7,1.212526e-7,1.228174e-7,1.240614e-7,1.26151e-7,1.301194e-7,1.332861e-7,1.372335e-7,1.403819e-7,1.44305e-7,1.482134e-7,1.513289e-7,1.552089e-7,1.590721e-7,1.621503e-7,1.659818e-7,1.697951e-7,1.728321e-7,1.766111e-7,1.803705e-7,1.833637e-7,1.870868e-7,1.907893e-7,1.937362e-7,1.974008e-7,2.01044e-7,2.039431e-7,2.075472e-7,2.111293e-7,2.139791e-7,2.175212e-7,2.210408e-7,2.238403e-7,2.273192e-7,2.307754e-7,2.335239e-7,2.369389e-7,2.403309e-7,2.430279e-7,2.463785e-7,2.497059e-7,2.523512e-7,2.55637e-7,2.588996e-7,2.614931e-7,2.64714e-7,2.691845e-7,2.704535e-7,2.736097e-7,2.779897e-7,2.792328e-7,2.823246e-7,2.866145e-7,2.878319e-7,2.908595e-7,2.950598e-7,2.962517e-7,2.992157e-7,3.033272e-7,3.044938e-7,3.073945e-7,3.11418e-7,3.125595e-7,3.153978e-7,3.193341e-7,3.204509e-7,3.232273e-7,3.270775e-7,3.281697e-7,3.308851e-7,3.346502e-7,3.357183e-7,3.383733e-7,3.420545e-7,3.430987e-7,3.456943e-7,3.492927e-7,3.503133e-7,3.538593e-7,3.573647e-7,3.608299e-7,3.642552e-7,3.676409e-7,3.709874e-7,3.742949e-7,3.775639e-7,3.807946e-7,3.839874e-7,3.871425e-7,3.902605e-7,3.933414e-7,3.963858e-7,3.99394e-7,4.023662e-7,4.053029e-7,4.082043e-7,4.110708e-7,4.139028e-7,4.167005e-7,4.194643e-7,4.221946e-7,4.248916e-7,4.275558e-7,4.301874e-7,4.335235e-7,4.353542e-7,4.386089e-7,4.400389e-7,4.435697e-7,4.449646e-7,4.484085e-7,4.49769e-7,4.531279e-7,4.544547e-7,4.577304e-7,4.590243e-7,4.622185e-7,4.634802e-7,4.665948e-7,4.678249e-7,4.708616e-7,4.720609e-7,4.750214e-7,4.761906e-7,4.790766e-7,4.802163e-7,4.830295e-7,4.841404e-7,4.868824e-7,4.879652e-7,4.906377e-7,4.916929e-7,4.948126e-7,4.953258e-7,4.983659e-7,4.988661e-7,5.018285e-7,5.023159e-7,5.052024e-7,5.056773e-7,5.084897e-7,5.089523e-7,5.116924e-7,5.121432e-7,5.148126e-7,5.152517e-7,5.1828e-7,5.212298e-7,5.241032e-7,5.269019e-7,5.296278e-7,5.322827e-7,5.348681e-7,5.37386e-7,5.398379e-7,5.422255e-7,5.445504e-7,5.468141e-7,5.490181e-7,5.51164e-7,5.532532e-7,5.552871e-7,5.572672e-7,5.590588e-7,5.609388e-7,5.627688e-7,5.645502e-7,5.662841e-7,5.679718e-7,5.696144e-7,5.712132e-7,5.727692e-7,5.742836e-7,5.757574e-7,5.771917e-7,5.785875e-7,5.799458e-7,5.812676e-7,5.825539e-7,5.838055e-7,5.850235e-7,5.862085e-7,5.873617e-7,5.884837e-7,5.895753e-7,5.906375e-7,5.91671e-7,5.926765e-7,5.936547e-7,5.946065e-7,5.955324e-7,5.964332e-7,5.973096e-7,5.981622e-7,5.989917e-7,5.997986e-7,6.005835e-7,6.013471e-7,6.020899e-7,6.028125e-7,6.035154e-7,6.04151e-7,6.048174e-7,6.054657e-7,6.060963e-7,6.067096e-7,6.073063e-7,6.078866e-7,6.084511e-7,6.090001e-7,6.095342e-7,6.100536e-7,6.105589e-7,6.110503e-7,6.115283e-7,6.119931e-7,6.124453e-7,6.128851e-7,6.133128e-7,6.137288e-7,6.141334e-7,6.145269e-7,6.149096e-7,6.152818e-7,6.156438e-7,6.159959e-7,6.163383e-7,6.166713e-7,6.169952e-7,6.173102e-7,6.176165e-7,6.179144e-7,6.182042e-7,6.184859e-7,6.187599e-7,6.190264e-7,6.192856e-7,6.195376e-7,6.197655e-7,6.200043e-7,6.202366e-7,6.204624e-7,6.206821e-7,6.208957e-7,6.211035e-7,6.213055e-7,6.21502e-7,6.21693e-7,6.218788e-7,6.220595e-7,6.222352e-7,6.224061e-7,6.225722e-7,6.227338e-7,6.228909e-7,6.230437e-7,6.231923e-7,6.233368e-7,6.234773e-7,6.236139e-7,6.237468e-7,6.23876e-7,6.240017e-7,0],"phase":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4]},"0.7":{"t":[0,55632240,108846500,152210500,193692600,227498700,259840400,288257800,311420300,333583200,351650000,368939600,383036100,394564300,396528600,406663600,408390700,416531400,418065100,424603700,427328200,432464900,434885100,438897400,442123000,445163400,448491000,451166500,453688900,455289800,456829100,458670300,460079700,461435000,462738200,463991500,464899900,466070400,466638800,467742800,468804600,469825800,470566100,471520200,472438000,472883700,473749600,474170100,474582600,474987100,475579500,475965000,476343100,476714000,477077800,477434700,477784700,478128100,478464900,478795400,479279300,479594200,479903200,480206300,480503600,480795300,481081500,481362300,481637700,481908000,482303800,482561500,482814300,483062400,483305800,483544600,483779000,484008900,484234500,484455900,484673200,484991500,485198700,485402100,485601700,485797600,485989900,486178500,486363700,486545400,486723800,486985200,487155500,487322600,487486600,487647600,487805700,487960800,488113100,488262600,488409400,488624600,488764800,488901000,489031300,489156100,489275700,489390500,489500600,489606500,489708400,489806400,489946700,490036000,490122200,490205400,490285800,490363500,490438600,490511300,490581700,490649900,490748200,490811300,490872500,490931900,490989600,491045700,491100100,491153100,491204600,491254700,491327400,491374300,491420000,491464500,491507900,491550200,491591400,491631700,491671000,491709300,491746800,491801300,491836600,491871100,491904900,491937900,491970200,492001700,492032600,492062900,492092500,492135700,492163800,492191300,492218200,492244600,492270500,492295900,492320800,492345200,492369100,492404100,492426900,492449300,492471300,493032100,496332100,499632100,503482100,506782100,510082100,513932100,517232100,520532100,524382100,527682100,530982100,534282100,538132100,541432100,544732100,548582100,551882100,555182100,558482100,562332100,565632100,568932100,572782100,576082100,579382100,582682100,586532100,589832100,593132100,596982100,600282100,602498200,602529300,602544400,602580600,602608300,602634900,602660500,602685100,602714600,602737300,602759200,602780300,602815800,602844600,602872100,602898400,602919500,602943800,602951700,602974800,603000500,603021700,603042100,603061700,603077600,603083800,603102000,603119600,603139400,603155700,603171600,603186900,603199400,603213900,603218700,603232600,603243900,603248400,603261500,603274200,603286600,603296700,603300600,603312300,603323700,603336600,603347300,603357800,603369700,603379600,603389300,603398700,603409400,603418400,603427200,603437100,603445500,603453600,603461600,603470700,603478300,603488100,603494200,603503600,603508200,603518300,603522700,603531400,603535600,603542900,603549000,603556900,603560800,603567500,603573100,603580400,603584900,603591900,603595400,603603000,603606300,603612800,603616000,603623000,603626100,603632100,603635800,603643000,603644400,603650700,603653400,603660100,603661400,603667300,603669800,603676100,603677300,603683900,603685100,603691500,603692600,603698200,603699300,603705300,603706300,603711600,603712600,603718200,603719200,603725500,603731200,603736200,603737100,603742400,603748000,603752900,603758100,603763200,603767700,603772400,603776700,603781100,603785100,603789300,603793300,603797000,603800800,603804200,603807800,603811300,603814400,603817700,603820600,603823700,603826500,603829400,603832200,603834800,603837500,603839900,603842400,603844700,603847000,603849400,603851400,603853600,603855600,603857700,603859700,603861500,603863400,603865100,603866900,603868500,603870200,603871900,603873400,603875000,603876400,603877900,603879300,603880600,603882000,603883200,603884500,603885700,603886900,603888100,603889200,603890300,603891300,603892400,603893400,603894400,603895400,603896300,603897200,603898100,603899000,603899900,603900600,603901500,603902200,603903000,603903700,603904400,603905200,603905800,603906500,603907100,603907800,603908400,603909000,603909600,603910100,603910700,603911200,603911800,603912300,603912800,603913300,603913700,603914200,603914600,603915100,603915500,603915900,603916300,603916700,603917100,603917500,603917900,603918200,603918600,603918900,603919200,603919600,603919900,603920200,603920500,603920800,603921100,603921300,603921600,603921900,603922100,603922400,603922600,603922800,603923100,603923300,603923500,603923700,603923900,603924100,603924300,603924500,603924700,603924900,603925100,603925300,603925400,603925600,603925800,603925900,603926100,603926200,603926400,603926500],"M":[1,0.9997436,0.9994289,0.9990999,0.9986962,0.9982742,0.9977562,0.9971666,0.9965503,0.9957939,0.9950031,0.9940326,0.9930181,0.9919751,0.9917729,0.9905856,0.9903554,0.9891328,0.9888733,0.9876391,0.987054,0.9858113,0.9851516,0.9839318,0.9828162,0.9816315,0.9801563,0.9788069,0.9773739,0.9763695,0.975324,0.9739567,0.9728122,0.9716209,0.9703806,0.9690894,0.9680862,0.9667007,0.9659866,0.9645146,0.9629819,0.9613859,0.9601459,0.9584327,0.9566487,0.9557292,0.9538332,0.9528558,0.9518584,0.9508405,0.9492742,0.9482031,0.9471098,0.9459941,0.9448552,0.9436929,0.9425065,0.9412955,0.9400594,0.9387977,0.9368559,0.9355276,0.9341717,0.9327876,0.9313745,0.929932,0.9284594,0.9269559,0.9254209,0.9238537,0.9214409,0.91979,0.9181044,0.9163831,0.9146255,0.9128306,0.9109977,0.9091259,0.9072143,0.9052619,0.9032678,0.9001965,0.898094,0.8959463,0.8937523,0.8915111,0.8892213,0.886882,0.8844918,0.8820496,0.8795541,0.8757081,0.8730736,0.8703811,0.8676291,0.8648161,0.8619406,0.8590011,0.8559958,0.8529231,0.8497813,0.8449349,0.8416121,0.838249,0.8348994,0.8315631,0.8282402,0.8249305,0.8216341,0.8183509,0.8150807,0.8118237,0.8069625,0.8037378,0.8005261,0.7973272,0.7941411,0.7909677,0.787807,0.7846589,0.7815234,0.7784004,0.7737394,0.7706475,0.767568,0.7645008,0.7614459,0.7584031,0.7553725,0.7523541,0.7493477,0.7463533,0.7418841,0.7389195,0.7359668,0.7330259,0.7300967,0.7271792,0.7242734,0.7213792,0.7184966,0.7156255,0.7127659,0.7084978,0.7056667,0.7028468,0.7000382,0.6972409,0.6944547,0.6916797,0.6889157,0.6861628,0.6834209,0.6793286,0.676614,0.6739102,0.6712173,0.6685351,0.6658636,0.6632028,0.6605527,0.6579131,0.6552841,0.6513602,0.6487574,0.646165,0.6435829,0.6421878,0.6415401,0.6408917,0.6401344,0.6394846,0.6388341,0.6380743,0.6374224,0.6367698,0.6360076,0.6353536,0.6346988,0.6340435,0.633278,0.6326211,0.6319635,0.6311955,0.6305365,0.6298768,0.6292164,0.628445,0.6277831,0.6271205,0.6263465,0.6256824,0.6250175,0.624352,0.6235746,0.6229075,0.6222397,0.6214596,0.6207903,0.6200212,0.619378,0.6190574,0.6182585,0.6176224,0.6169891,0.6163586,0.615731,0.6149508,0.6143301,0.6137125,0.6130982,0.6120308,0.6111241,0.6102249,0.6093334,0.6085964,0.6077192,0.6074286,0.6065618,0.6055607,0.6047112,0.6038696,0.6030361,0.6023476,0.6020737,0.6012575,0.6004492,0.5995163,0.5987253,0.5979421,0.5971669,0.5965269,0.595766,0.5955142,0.5947637,0.5941442,0.5938979,0.5931641,0.592438,0.5917195,0.5911265,0.5908907,0.5901885,0.5894937,0.5886924,0.5880135,0.5873419,0.5865675,0.5859114,0.5852624,0.5846205,0.5838803,0.5832534,0.5826333,0.5819185,0.581313,0.5807142,0.580122,0.5794393,0.5788611,0.5781002,0.5776304,0.5768877,0.5765204,0.5757042,0.5753458,0.574637,0.5742866,0.5736797,0.5731658,0.5724896,0.5721553,0.5715763,0.5710861,0.5704411,0.570043,0.5694137,0.5691027,0.5684114,0.5681079,0.5675079,0.5672113,0.5665523,0.566263,0.565691,0.5653379,0.5646418,0.5645042,0.5638914,0.5636224,0.562959,0.5628279,0.5622438,0.5619875,0.5613553,0.5612303,0.5605515,0.5604296,0.5597676,0.5596487,0.5590613,0.5589452,0.5583144,0.5582012,0.5576416,0.557531,0.5569301,0.5568223,0.5561313,0.5555087,0.5549507,0.5548506,0.5542577,0.5536308,0.5530662,0.5524692,0.5518873,0.551363,0.5508089,0.5503098,0.5497821,0.5493069,0.5488045,0.5483148,0.5478738,0.5474076,0.5469877,0.5465439,0.5461113,0.5457217,0.54531,0.5449391,0.5445472,0.5441942,0.5438211,0.5434575,0.5431301,0.542784,0.5424724,0.542143,0.5418464,0.541533,0.5412275,0.5409524,0.5406617,0.5403999,0.5401232,0.5398536,0.5396108,0.5393543,0.5391233,0.5388791,0.5386593,0.538427,0.5382006,0.5379967,0.5377813,0.5375873,0.5373824,0.5371826,0.5370028,0.5368127,0.5366416,0.5364608,0.536298,0.5361259,0.5359583,0.5358073,0.5356478,0.5355042,0.5353524,0.5352158,0.5350714,0.5349307,0.534804,0.5346702,0.5345497,0.5344223,0.5342983,0.5341865,0.5340685,0.5339622,0.5338499,0.5337488,0.5336419,0.5335378,0.5334441,0.533345,0.5332559,0.5331617,0.5330699,0.5329872,0.5328999,0.5328212,0.5327381,0.5326633,0.5325843,0.5325073,0.532438,0.5323647,0.5322987,0.532229,0.5321663,0.5321,0.5320354,0.5319772,0.5319158,0.5318605,0.531802,0.5317451,0.5316938,0.5316396,0.5315908,0.5315393,0.5314929,0.5314439,0.5313961,0.5313531,0.5313076,0.5312667,0.5312235,0.5311814,0.5311435,0.5311034,0.5310673,0.5310292,0.5309949,0.5309587,0.5309233,0.5308915,0.5308579,0.5308277,0.5307957,0.530767,0.5307366,0.5307069,0.5306803,0.5306521,0.5306267,0.5305999,0.5305738,0.5305503,0.5305255,0.5305031,0.5304795,0.5304582,0.5304357,0.529418],"L":[4.803843,5.5456,6.478746,7.478655,8.736414,10.08398,11.77881,13.75771,15.87736,18.54245,21.39647,24.984,28.82479,32.85946,33.65123,38.35761,39.2811,44.24086,45.30511,50.41784,52.87039,58.13643,60.96148,66.23688,71.11737,76.35417,82.94831,89.04723,95.58974,100.2134,105.0581,111.4406,116.8213,122.4584,128.3639,134.5502,139.3821,146.0916,149.5648,156.7569,164.2893,172.1777,178.3374,186.8884,195.842,200.4754,210.0674,215.0309,220.1093,225.3053,233.3253,238.8267,244.4551,250.2132,256.1039,262.1303,268.2952,274.6017,281.053,287.6522,297.8355,304.8189,311.9619,319.2678,326.7404,334.3832,342.1999,350.1943,358.3701,366.7313,379.6296,388.4719,397.5139,406.7599,416.2141,425.881,435.7651,445.871,456.2034,466.767,477.5666,494.2195,505.6311,517.2964,529.2207,541.4093,553.8677,566.6014,579.616,592.9173,606.5111,627.4633,641.8145,656.4795,671.4644,686.7757,702.4199,718.4035,734.7334,751.4162,768.459,794.7134,812.6869,830.853,848.9182,866.8814,884.7418,902.4986,920.1511,937.6986,955.1407,972.4768,998.2813,1015.351,1032.313,1049.168,1065.915,1082.554,1099.086,1115.51,1131.825,1148.033,1172.143,1188.082,1203.913,1219.637,1235.254,1250.764,1266.167,1281.463,1296.654,1311.739,1334.168,1348.989,1363.706,1378.319,1392.828,1407.233,1421.536,1435.735,1449.833,1463.829,1477.723,1498.376,1512.019,1525.563,1539.008,1552.354,1565.602,1578.753,1591.806,1604.763,1617.624,1636.736,1649.36,1661.889,1674.324,1686.667,1698.917,1711.075,1723.142,1735.118,1747.003,1764.664,1776.326,1787.9,1799.387,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,45,600.7042,616.8897,624.8739,644.5285,659.948,675.1074,690.0153,704.68,722.6806,736.8256,750.7509,764.4628,787.9632,807.6237,826.8572,845.6797,861.0622,879.17,885.1229,902.7394,922.8454,939.7094,956.2437,972.4585,985.7337,990.9847,1006.54,1021.804,1039.257,1053.92,1068.317,1082.456,1094.045,1107.727,1112.234,1125.598,1136.556,1140.895,1153.763,1166.411,1178.844,1189.044,1193.084,1205.069,1216.855,1230.359,1241.728,1252.911,1265.729,1276.524,1287.146,1297.598,1309.582,1319.679,1329.617,1341.015,1350.62,1360.076,1369.387,1380.068,1389.072,1400.864,1408.112,1419.521,1425.14,1437.576,1443.014,1453.729,1459.006,1468.117,1475.802,1485.873,1490.835,1499.402,1506.629,1516.103,1521.931,1531.112,1535.636,1545.657,1550.042,1558.688,1562.949,1572.389,1576.521,1584.668,1589.682,1599.534,1601.477,1610.109,1613.887,1623.18,1625.013,1633.156,1636.72,1645.49,1647.219,1656.592,1658.27,1667.367,1668.996,1677.033,1678.618,1687.21,1688.749,1696.342,1697.84,1705.958,1707.413,1716.71,1725.054,1732.508,1733.843,1741.733,1750.047,1757.51,1765.375,1773.018,1779.881,1787.115,1793.612,1800.46,1806.612,1813.098,1819.403,1825.068,1831.041,1836.408,1842.068,1847.572,1852.518,1857.735,1862.423,1867.369,1871.814,1876.504,1881.065,1885.166,1889.492,1893.382,1897.486,1901.175,1905.069,1908.857,1912.263,1915.858,1919.09,1922.502,1925.822,1928.807,1931.958,1934.792,1937.784,1940.474,1943.314,1946.078,1948.565,1951.19,1953.55,1956.043,1958.469,1960.652,1962.956,1965.029,1967.218,1969.187,1971.266,1973.29,1975.111,1977.034,1978.764,1980.59,1982.234,1983.969,1985.659,1987.18,1988.786,1990.231,1991.756,1993.242,1994.579,1995.991,1997.262,1998.603,1999.811,2001.086,2002.328,2003.446,2004.626,2005.688,2006.81,2007.903,2008.886,2009.925,2010.859,2011.847,2012.735,2013.674,2014.588,2015.41,2016.279,2017.061,2017.887,2018.631,2019.416,2020.181,2020.87,2021.597,2022.251,2022.943,2023.616,2024.223,2024.863,2025.439,2026.048,2026.596,2027.175,2027.739,2028.247,2028.783,2029.265,2029.775,2030.272,2030.719,2031.191,2031.616,2032.065,2032.47,2032.897,2033.313,2033.687,2034.083,2034.439,2034.815,2035.154,2035.511,2035.86,2036.174,2036.505,2036.803,2037.119,2037.426,2037.702,2037.994,2038.257,2038.534,2038.784,2039.049,0],"mdot":[4.130328e-12,5.246682e-12,6.798686e-12,8.635556e-12,1.118898e-11,1.421073e-11,1.841074e-11,2.385068e-11,3.028713e-11,3.923148e-11,4.981279e-11,6.451485e-11,8.190503e-11,1.019294e-10,1.060639e-10,1.319862e-10,1.373383e-10,1.675309e-10,1.743224e-10,2.084517e-10,2.256901e-10,2.645558e-10,2.864278e-10,3.291388e-10,3.707769e-10,4.176763e-10,4.799332e-10,5.406244e-10,6.089832e-10,6.592892e-10,7.137477e-10,7.881854e-10,8.532843e-10,9.237576e-10,1.000049e-9,1.08264e-9,1.14903e-9,1.243924e-9,1.294271e-9,1.401163e-9,1.516887e-9,1.642174e-9,1.74289e-9,1.886861e-9,2.042739e-9,2.125449e-9,2.301068e-9,2.394256e-9,2.491225e-9,2.59213e-9,2.751219e-9,2.862681e-9,2.97867e-9,3.099373e-9,3.224982e-9,3.355698e-9,3.491731e-9,3.633299e-9,3.780629e-9,3.933959e-9,4.175744e-9,4.345174e-9,4.521514e-9,4.705049e-9,4.896076e-9,5.094904e-9,5.301859e-9,5.517275e-9,5.741505e-9,5.974915e-9,6.343083e-9,6.601152e-9,6.869811e-9,7.149506e-9,7.440697e-9,7.743869e-9,8.059524e-9,8.38819e-9,8.730414e-9,9.086772e-9,9.457862e-9,1.00435e-8,1.045422e-8,1.088199e-8,1.132754e-8,1.179163e-8,1.227507e-8,1.277869e-8,1.330336e-8,1.385e-8,1.441957e-8,1.531912e-8,1.59505e-8,1.660853e-8,1.729441e-8,1.800935e-8,1.875468e-8,1.953175e-8,2.034199e-8,2.118692e-8,2.20681e-8,2.346154e-8,2.444084e-8,2.54518e-8,2.647841e-8,2.752047e-8,2.857775e-8,2.965003e-8,3.07371e-8,3.183876e-8,3.29548e-8,3.408502e-8,3.580653e-8,3.697137e-8,3.814973e-8,3.934144e-8,4.05463e-8,4.176416e-8,4.299484e-8,4.423817e-8,4.5494e-8,4.676216e-8,4.868717e-8,4.998548e-8,5.12956e-8,5.261736e-8,5.395064e-8,5.529529e-8,5.665118e-8,5.801817e-8,5.939614e-8,6.078495e-8,6.288823e-8,6.430361e-8,6.572941e-8,6.716551e-8,6.861181e-8,7.006818e-8,7.153451e-8,7.301071e-8,7.449667e-8,7.599228e-8,7.749745e-8,7.97729e-8,8.130153e-8,8.283939e-8,8.438638e-8,8.594241e-8,8.75074e-8,8.908126e-8,9.066391e-8,9.225527e-8,9.385526e-8,9.627126e-8,9.78925e-8,9.95221e-8,1.0116e-7,1.028061e-7,1.044604e-7,1.061228e-7,1.077932e-7,1.094716e-7,1.111578e-7,1.13702e-7,1.154077e-7,1.171212e-7,1.188423e-7,1.962043e-10,1.964024e-10,1.966011e-10,1.968337e-10,1.970337e-10,1.972343e-10,1.974692e-10,1.976711e-10,1.978737e-10,1.981108e-10,1.983148e-10,1.985193e-10,1.987246e-10,1.989648e-10,1.991714e-10,1.993786e-10,1.996212e-10,1.998298e-10,2.000391e-10,2.002491e-10,2.004949e-10,2.007063e-10,2.009183e-10,2.011666e-10,2.013801e-10,2.015944e-10,2.018092e-10,2.020608e-10,2.022772e-10,2.024943e-10,2.027485e-10,2.029671e-10,2.034076e-8,2.119036e-8,2.161426e-8,2.267127e-8,2.351388e-8,2.435368e-8,2.519054e-8,2.602434e-8,2.706213e-8,2.788869e-8,2.871188e-8,2.953163e-8,3.095768e-8,3.217118e-8,3.337633e-8,3.457297e-8,3.556356e-8,3.674423e-8,3.713582e-8,3.830464e-8,3.965688e-8,4.080611e-8,4.194619e-8,4.307706e-8,4.40124e-8,4.438473e-8,4.549553e-8,4.659702e-8,4.78703e-8,4.895156e-8,5.002347e-8,5.108604e-8,5.196438e-8,5.300983e-8,5.335624e-8,5.438926e-8,5.524302e-8,5.558271e-8,5.659563e-8,5.75993e-8,5.859376e-8,5.941546e-8,5.974236e-8,6.071697e-8,6.168248e-8,6.279745e-8,6.374337e-8,6.468032e-8,6.576214e-8,6.66798e-8,6.758864e-8,6.84887e-8,6.952775e-8,7.040898e-8,7.128159e-8,7.228883e-8,7.314298e-8,7.398868e-8,7.482601e-8,7.579238e-8,7.661174e-8,7.769148e-8,7.835898e-8,7.941534e-8,7.993818e-8,8.110168e-8,8.16131e-8,8.262554e-8,8.312658e-8,8.399519e-8,8.473144e-8,8.570135e-8,8.618131e-8,8.701327e-8,8.771839e-8,8.864719e-8,8.922115e-8,9.012912e-8,9.057836e-8,9.157772e-8,9.201683e-8,9.288583e-8,9.331575e-8,9.427205e-8,9.46922e-8,9.552363e-8,9.60373e-8,9.705103e-8,9.725162e-8,9.814545e-8,9.853811e-8,9.950755e-8,9.969936e-8,1.00554e-7,1.009294e-7,1.018563e-7,1.020396e-7,1.030363e-7,1.032155e-7,1.04189e-7,1.043639e-7,1.052291e-7,1.054002e-7,1.063305e-7,1.064976e-7,1.073242e-7,1.074877e-7,1.083764e-7,1.085361e-7,1.095597e-7,1.104831e-7,1.113118e-7,1.114606e-7,1.123424e-7,1.132758e-7,1.141176e-7,1.150086e-7,1.158783e-7,1.166626e-7,1.174926e-7,1.18241e-7,1.19033e-7,1.197471e-7,1.205027e-7,1.212401e-7,1.219048e-7,1.226081e-7,1.232421e-7,1.239128e-7,1.245672e-7,1.25157e-7,1.25781e-7,1.263434e-7,1.269383e-7,1.274744e-7,1.280415e-7,1.285947e-7,1.290932e-7,1.296204e-7,1.300956e-7,1.305981e-7,1.310509e-7,1.315297e-7,1.319967e-7,1.324175e-7,1.328624e-7,1.332633e-7,1.336873e-7,1.341006e-7,1.344731e-7,1.348669e-7,1.352217e-7,1.355968e-7,1.359347e-7,1.36292e-7,1.366404e-7,1.369542e-7,1.37286e-7,1.375849e-7,1.379009e-7,1.382089e-7,1.384864e-7,1.387797e-7,1.390439e-7,1.393232e-7,1.395748e-7,1.398408e-7,1.401e-7,1.403335e-7,1.405803e-7,1.408027e-7,1.410376e-7,1.412493e-7,1.41473e-7,1.41691e-7,1.418874e-7,1.42095e-7,1.422819e-7,1.424795e-7,1.426721e-7,1.428456e-7,1.430289e-7,1.43194e-7,1.433684e-7,1.435256e-7,1.436916e-7,1.438535e-7,1.439992e-7,1.441533e-7,1.44292e-7,1.444386e-7,1.445815e-7,1.447102e-7,1.448461e-7,1.449686e-7,1.45098e-7,1.452145e-7,1.453376e-7,1.454576e-7,1.455657e-7,1.456799e-7,1.457827e-7,1.458914e-7,1.459892e-7,1.460926e-7,1.461934e-7,1.462841e-7,1.4638e-7,1.464663e-7,1.465576e-7,1.466465e-7,1.467265e-7,1.468111e-7,1.468873e-7,1.469678e-7,1.470402e-7,1.471168e-7,1.471914e-7,1.472586e-7,1.473296e-7,1.473935e-7,1.474611e-7,1.475269e-7,1.475862e-7,1.476488e-7,1.477052e-7,1.477648e-7,1.478184e-7,1.478751e-7,1.479303e-7,1.479801e-7,1.480326e-7,1.480799e-7,1.481299e-7,1.481749e-7,1.482225e-7,1.482688e-7,1.483106e-7,1.483546e-7,1.483943e-7,1.484363e-7,1.484771e-7,1.485139e-7,1.485528e-7,1.485878e-7,1.486248e-7,1.486581e-7,1.486933e-7,0],"phase":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4]}},"rhea":{"Mx":0.906588142353999,"n_m":507.8714178865312,"gJ2":0.16257451956290692,"gExt":0.012705777215876105,"npx":0.17531191046044578,"theta_deg":26.73,"a_km":527108,"GM_R":153.94,"GM_S":37931207.7,"R_S":60330,"tM_0.3":47437738.84612376,"tM_0.477":71841997.16114303,"tM_0.7":101747461.60511714,"e_forced_by_Titan":0.0009707152003300282,"Mwd":0.5605185119015879,"P_orb_final_yr":93.75805600974492},"crossings":[{"planet":"Mars","moon":"Phobos","a_over_R":2.76073,"P_varpi_yr":2.25641,"P_orb_yr":1.8808,"weight":1,"mmr":false,"fJ2":0.996736,"obl":25.19,"crosses":true,"M_cross":0.91294,"eps":0.00038706,"fJ2_cross":0.996828,"P_orb_cross_yr":2.25662,"e_star":0.0363444,"tM_0.3":54587400,"phase_0.3":1,"Lam_0.3":206.963,"tM_0.477":83016000,"phase_0.477":1,"Lam_0.477":314.747,"tM_0.7":117878000,"phase_0.7":1,"Lam_0.7":446.922},{"planet":"Mars","moon":"Deimos","a_over_R":6.90866,"P_varpi_yr":54.4617,"P_orb_yr":1.8808,"weight":1,"mmr":false,"fJ2":0.970419,"obl":25.19,"crosses":false},{"planet":"Jupiter","moon":"Io","a_over_R":5.89996,"P_varpi_yr":7.42162,"P_orb_yr":11.862,"weight":0.999631,"mmr":true,"fJ2":0.969941,"obl":3.13,"crosses":false},{"planet":"Jupiter","moon":"Europa","a_over_R":9.38706,"P_varpi_yr":29.7478,"P_orb_yr":11.862,"weight":0.99945,"mmr":true,"fJ2":0.765269,"obl":3.13,"crosses":true,"M_cross":0.631059,"eps":0.000326489,"fJ2_cross":0.766262,"P_orb_cross_yr":29.7864,"e_star":0.0399427,"tM_0.3":722261,"phase_0.3":3,"Lam_0.3":0.178834,"tM_0.477":1975760,"phase_0.477":3,"Lam_0.477":0.489204,"tM_0.7":3159770000,"phase_0.7":2,"Lam_0.7":782.366},{"planet":"Jupiter","moon":"Ganymede","a_over_R":14.9723,"P_varpi_yr":136.867,"P_orb_yr":11.862,"weight":0.988403,"mmr":true,"fJ2":0.687089,"obl":3.13,"crosses":false},{"planet":"Jupiter","moon":"Callisto","a_over_R":26.3344,"P_varpi_yr":539.766,"P_orb_yr":11.862,"weight":0.994432,"mmr":false,"fJ2":0.375485,"obl":3.13,"crosses":false},{"planet":"Saturn","moon":"Mimas","a_over_R":3.0754,"P_varpi_yr":0.985535,"P_orb_yr":29.457,"weight":1,"mmr":true,"fJ2":0.985528,"obl":26.73,"crosses":false},{"planet":"Saturn","moon":"Enceladus","a_over_R":3.94411,"P_varpi_yr":2.35948,"P_orb_yr":29.457,"weight":1,"mmr":true,"fJ2":0.987754,"obl":26.73,"crosses":false},{"planet":"Saturn","moon":"Tethys","a_over_R":4.88346,"P_varpi_yr":4.97535,"P_orb_yr":29.457,"weight":0.999989,"mmr":true,"fJ2":0.986124,"obl":26.73,"crosses":false},{"planet":"Saturn","moon":"Dione","a_over_R":6.25553,"P_varpi_yr":11.7031,"P_orb_yr":29.457,"weight":0.999976,"mmr":true,"fJ2":0.975057,"obl":26.73,"crosses":false},{"planet":"Saturn","moon":"Rhea","a_over_R":8.73708,"P_varpi_yr":35.8369,"P_orb_yr":29.457,"weight":0.999964,"mmr":false,"fJ2":0.927264,"obl":26.73,"crosses":true,"M_cross":0.906588,"eps":0.00034519,"fJ2_cross":0.927344,"P_orb_cross_yr":35.84,"e_star":0.0353652,"tM_0.3":47437700,"phase_0.3":1,"Lam_0.3":8.78639,"tM_0.477":71842000,"phase_0.477":1,"Lam_0.477":13.3065,"tM_0.7":101747000,"phase_0.7":1,"Lam_0.7":18.8456},{"planet":"Saturn","moon":"Titan","a_over_R":20.2531,"P_varpi_yr":705.191,"P_orb_yr":29.457,"weight":0.998395,"mmr":false,"fJ2":0.962257,"obl":26.73,"crosses":false},{"planet":"Saturn","moon":"Iapetus","a_over_R":59.0224,"P_varpi_yr":3506.04,"P_orb_yr":29.457,"weight":0.999999,"mmr":false,"fJ2":0.113217,"obl":26.73,"crosses":false},{"planet":"Uranus","moon":"Miranda","a_over_R":5.08236,"P_varpi_yr":17.7209,"P_orb_yr":84.011,"weight":0.999997,"mmr":false,"fJ2":0.932906,"obl":97.77,"crosses":false},{"planet":"Uranus","moon":"Ariel","a_over_R":7.46899,"P_varpi_yr":58.219,"P_orb_yr":84.011,"weight":0.983513,"mmr":false,"fJ2":0.796583,"obl":97.77,"crosses":false},{"planet":"Uranus","moon":"Umbriel","a_over_R":10.4073,"P_varpi_yr":129.111,"P_orb_yr":84.011,"weight":0.975224,"mmr":false,"fJ2":0.553176,"obl":97.77,"crosses":true,"M_cross":0.806671,"eps":0.0000878951,"fJ2_cross":0.553152,"P_orb_cross_yr":129.105,"e_star":0.0105551,"tM_0.3":6736150,"phase_0.3":3,"Lam_0.3":0.000977865,"tM_0.477":15735300,"phase_0.477":1,"Lam_0.477":0.00228424,"tM_0.7":22132700,"phase_0.7":1,"Lam_0.7":0.00321294},{"planet":"Uranus","moon":"Titania","a_over_R":17.0703,"P_varpi_yr":204.722,"P_orb_yr":84.011,"weight":0.76593,"mmr":false,"fJ2":0.155206,"obl":97.77,"crosses":true,"M_cross":0.640677,"eps":0.000116466,"fJ2_cross":0.155168,"P_orb_cross_yr":204.672,"e_star":0.0229404,"tM_0.3":774841,"phase_0.3":3,"Lam_0.3":0.000124576,"tM_0.477":2289140,"phase_0.477":3,"Lam_0.477":0.00036804,"tM_0.7":3257660000,"phase_0.7":2,"Lam_0.7":0.523755},{"planet":"Uranus","moon":"Oberon","a_over_R":22.8295,"P_varpi_yr":927.843,"P_orb_yr":84.011,"weight":0.7767,"mmr":false,"fJ2":0.254286,"obl":97.77,"crosses":false},{"planet":"Neptune","moon":"Proteus","a_over_R":4.6639,"P_varpi_yr":13.0602,"P_orb_yr":164.79,"weight":1,"mmr":false,"fJ2":0.998992,"obl":28.32,"crosses":false}],"rheaTable":[{"f":1,"Mx":0.9065881423539965,"n_m":507.8714178865312,"gJ2":0.16257451956290692,"gExt":0.012705777215876105,"fJ2":0.9275116630369941},{"f":1.01,"Mx":0.8924017193806272,"n_m":500.34747390274987,"gJ2":0.15701012922011517,"gExt":0.012827969214133964,"fJ2":0.9244694251031068},{"f":1.02,"Mx":0.8786814927259426,"n_m":493.00748683179273,"gJ2":0.15168822803430196,"gExt":0.01296813520167098,"fJ2":0.9212412144492342},{"f":1.03,"Mx":0.8654116626070872,"n_m":485.8452209576814,"gJ2":0.14659602444968034,"gExt":0.013125054794256373,"fJ2":0.9178251558505255},{"f":1.04,"Mx":0.852577460455488,"n_m":478.85470972623114,"gJ2":0.1417215167728027,"gExt":0.013297715733439125,"fJ2":0.9142189293647568},{"f":1.05,"Mx":0.8401650599380125,"n_m":472.0302416799436,"gJ2":0.1370534374266395,"gExt":0.013485280675063166,"fJ2":0.910419851815447},{"f":1.06,"Mx":0.8281615002749961,"n_m":465.3663472533264,"gJ2":0.13258120162195638,"gExt":0.013687060375717097,"fJ2":0.9064249469516853},{"f":1.07,"Mx":0.8165546196319338,"n_m":458.8577863684749,"gJ2":0.12829486005840623,"gExt":0.013902491934962692,"fJ2":0.9022310068361118},{"f":1.08,"Mx":0.8053329968240631,"n_m":452.49953677547177,"gJ2":0.1241850553049935,"gExt":0.014131121059318836,"fJ2":0.8978346464545207},{"f":1.09,"Mx":0.7944858999540501,"n_m":446.2867830864726,"gJ2":0.12024298154292487,"gExt":0.014372587546340443,"fJ2":0.8932323531105841},{"f":1.1,"Mx":0.7840032408723765,"n_m":440.21490645629297,"gJ2":0.11646034738377715,"gExt":0.014626613363436796,"fJ2":0.8884205318357901},{"f":1.11,"Mx":0.7738755345715053,"n_m":434.2794748659098,"gJ2":0.11282934150275488,"gExt":0.014892992830763932,"fJ2":0.8833955477835681},{"f":1.12,"Mx":0.7640938627920264,"n_m":428.4762339685977,"gJ2":0.10934260085093754,"gExt":0.015171584521025152,"fJ2":0.8781537663704508},{"f":1.13,"Mx":0.7546498412538655,"n_m":422.80109846143944,"gJ2":0.10599318123210734,"gExt":0.015462304569089619,"fJ2":0.8726915917622781},{"f":1.14,"Mx":0.7455355900268373,"n_m":417.2501439477215,"gJ2":0.10277453004927913,"gExt":0.015765121146619165,"fJ2":0.867005504170366},{"f":1.15,"Mx":0.7367437066416539,"n_m":411.8195992582749,"gJ2":0.0996804610436556,"gExt":0.016080049905667946,"fJ2":0.8610920963133334},{"f":1.16,"Mx":0.7282672416073713,"n_m":406.50583920214774,"gJ2":0.09670513086459877,"gExt":0.01640715023360877,"fJ2":0.8549481093095136},{"f":1.17,"Mx":0.7200996760553317,"n_m":401.3053777191513,"gJ2":0.09384301732354283,"gExt":0.016746522192144057,"fJ2":0.8485704681881906},{"f":1.18,"Mx":0.7122349012770183,"n_m":396.2148614087909,"gJ2":0.09108889919771898,"gExt":0.017098304037380895,"fJ2":0.8419563171420112},{"f":1.19,"Mx":0.7046671999486771,"n_m":391.23106341190737,"gJ2":0.08843783746127237,"gExt":0.0174626702373421,"fJ2":0.8351030545855394},{"f":1.2,"Mx":0.6973912288828011,"n_m":386.3508776230359,"gJ2":0.08588515783195319,"gExt":0.01783982991893008,"fJ2":0.8280083680339778},{"f":1.21,"Mx":0.6904020031537946,"n_m":381.57131321302126,"gJ2":0.08342643453116257,"gExt":0.01823002568902072,"fJ2":0.8206702687705699},{"f":1.22,"Mx":0.6836948814763648,"n_m":376.889489442859,"gJ2":0.08105747516384523,"gExt":0.01863353278470977,"fJ2":0.813087126229825},{"f":1.23,"Mx":0.6772655527292737,"n_m":372.3026307510402,"gJ2":0.07877430663261782,"gExt":0.01905065851622553,"fJ2":0.8052577019859968},{"f":1.24,"Mx":0.6711100235325672,"n_m":367.80806209789046,"gJ2":0.07657316200769979,"gExt":0.019481741973040912,"fJ2":0.7971811832017753},{"f":1.25,"Mx":0.6652246067993055,"n_m":363.4032045515156,"gJ2":0.0744504682807356,"gExt":0.019927153969578032,"fJ2":0.788857215360585},{"f":1.26,"Mx":0.6596059111940802,"n_m":359.08557110100054,"gJ2":0.072402834936529,"gExt":0.02038729721182706,"fJ2":0.7802859340772234},{"f":1.27,"Mx":0.6542508314404591,"n_m":354.8527626834683,"gJ2":0.07042704328211219,"gExt":0.0208626066703858,"fJ2":0.7714679957559095},{"f":1.28,"Mx":0.6491565394282899,"n_m":350.7024644124932,"gJ2":0.06852003647749215,"gExt":0.021353550149024608,"fJ2":0.7624046068422472},{"f":1.29,"Mx":0.6443204760801498,"n_m":346.63244199618293,"gJ2":0.06667891021690343,"gExt":0.021860629041022265,"fJ2":0.753097551396334},{"f":1.3,"Mx":0.639740343939886,"n_m":342.64053833401044,"gJ2":0.06490090401348884,"gExt":0.022384379268274232,"fJ2":0.743549216698812},{"f":1.31,"Mx":0.6354141004632216,"n_m":338.72467028217983,"gJ2":0.06318339304406763,"gExt":0.02292537240066927,"fJ2":0.7337626165900337},{"f":1.32,"Mx":0.6313399519789898,"n_m":334.88282557796975,"gJ2":0.061523880514064926,"gExt":0.023484216955492025,"fJ2":0.7237414122354382},{"f":1.33,"Mx":0.6275163483127278,"n_m":331.11305991410654,"gJ2":0.05991999050579867,"gExt":0.024061559878722574,"fJ2":0.7134899300078009},{"f":1.34,"Mx":0.6239419780592511,"n_m":327.413494154784,"gJ2":0.05836946127617692,"gExt":0.024658088212102094,"fJ2":0.7030131761797562},{"f":1.35,"Mx":0.6206157644994453,"n_m":323.78231168547865,"gJ2":0.056870138972474636,"gExt":0.025274530951771866,"fJ2":0.6923168481280655},{"f":1.36,"Mx":0.6175368621609691,"n_m":320.217755889191,"gJ2":0.055419971737254915,"gExt":0.025911661106194625,"fJ2":0.6814073417649139},{"f":1.37,"Mx":0.6147046540273517,"n_m":316.7181277422095,"gJ2":0.054017004175697714,"gExt":0.02657029796297974,"fJ2":0.6702917549311102},{"f":1.38,"Mx":0.6121187494046374,"n_m":313.2817835229096,"gJ2":0.052659372160614504,"gExt":0.02725130957617716,"fJ2":0.6589778865116303},{"f":1.39,"Mx":0.6097789824593949,"n_m":309.90713262750086,"gJ2":0.051345297952277484,"gExt":0.027955615487626848,"fJ2":0.6474742310652939},{"f":1.4,"Mx":0.6076854114464421,"n_m":306.59263548700454,"gJ2":0.05007308561189332,"gExt":0.028684189698054616,"fJ2":0.6357899687975685},{"f":1.41,"Mx":0.6058383186491727,"n_m":303.3368015800845,"gJ2":0.04884111668911174,"gExt":0.029438063905835622,"fJ2":0.6239349507481209},{"f":1.42,"Mx":0.6042382110600194,"n_m":300.13818753667937,"gJ2":0.04764784616539862,"gExt":0.030218331033752974,"fJ2":0.6119196791122009},{"f":1.43,"Mx":0.6028858218331244,"n_m":296.9953953276812,"gJ2":0.04649179863642431,"gExt":0.031026149066652093,"fJ2":0.599755282667},{"f":1.44,"Mx":0.6017821125459984,"n_m":293.90707053618706,"gJ2":0.045371564717835884,"gExt":0.03186274522568825,"fJ2":0.5874534873298257},{"f":1.45,"Mx":0.6009282763117139,"n_m":290.8719007061123,"gJ2":0.04428579765990519,"gExt":0.03272942050794122,"fJ2":0.575026581933314}],"race":[{"eta":0.3,"f":1,"e0":0.001,"mean":0.02648,"phase":1,"Lam":8.786},{"eta":0.3,"f":1,"e0":0,"mean":0.02362,"phase":1,"Lam":8.786},{"eta":0.3,"f":1.02,"e0":0.001,"mean":0.01935,"phase":1,"Lam":4.475},{"eta":0.3,"f":1.02,"e0":0,"mean":0.01253,"phase":1,"Lam":4.475},{"eta":0.3,"f":1.04,"e0":0.001,"mean":0.02591,"phase":3,"Lam":8.773},{"eta":0.3,"f":1.04,"e0":0,"mean":0.02302,"phase":3,"Lam":8.773},{"eta":0.3,"f":1.06,"e0":0.001,"mean":0.009576,"phase":3,"Lam":2.273},{"eta":0.3,"f":1.06,"e0":0,"mean":0.00176,"phase":3,"Lam":2.273},{"eta":0.3,"f":1.08,"e0":0.001,"mean":0.002461,"phase":3,"Lam":0.7169},{"eta":0.3,"f":1.08,"e0":0,"mean":0.0001967,"phase":3,"Lam":0.7169},{"eta":0.3,"f":1.1,"e0":0.001,"mean":0.001698,"phase":3,"Lam":0.3895},{"eta":0.3,"f":1.1,"e0":0,"mean":0.00009939,"phase":3,"Lam":0.3895},{"eta":0.3,"f":1.12,"e0":0.001,"mean":0.001421,"phase":3,"Lam":0.249},{"eta":0.3,"f":1.12,"e0":0,"mean":0.00006874,"phase":3,"Lam":0.249},{"eta":0.3,"f":1.14,"e0":0.001,"mean":0.001289,"phase":3,"Lam":0.176},{"eta":0.3,"f":1.14,"e0":0,"mean":0.00004719,"phase":3,"Lam":0.176},{"eta":0.3,"f":1.16,"e0":0.001,"mean":0.001225,"phase":3,"Lam":0.1307},{"eta":0.3,"f":1.16,"e0":0,"mean":0.0000376,"phase":3,"Lam":0.1307},{"eta":0.3,"f":1.18,"e0":0.001,"mean":0.001162,"phase":3,"Lam":0.1017},{"eta":0.3,"f":1.18,"e0":0,"mean":0.00003322,"phase":3,"Lam":0.1017},{"eta":0.3,"f":1.2,"e0":0.001,"mean":0.001109,"phase":3,"Lam":0.08205},{"eta":0.3,"f":1.2,"e0":0,"mean":0.00002901,"phase":3,"Lam":0.08205},{"eta":0.3,"f":1.22,"e0":0.001,"mean":0.001089,"phase":3,"Lam":0.06758},{"eta":0.3,"f":1.22,"e0":0,"mean":0.00002572,"phase":3,"Lam":0.06758},{"eta":0.3,"f":1.24,"e0":0.001,"mean":0.001083,"phase":3,"Lam":0.05705},{"eta":0.3,"f":1.24,"e0":0,"mean":0.00002334,"phase":3,"Lam":0.05705},{"eta":0.3,"f":1.26,"e0":0.001,"mean":0.001079,"phase":3,"Lam":0.04928},{"eta":0.3,"f":1.26,"e0":0,"mean":0.00002147,"phase":3,"Lam":0.04928},{"eta":0.3,"f":1.28,"e0":0.001,"mean":0.001074,"phase":3,"Lam":0.04322},{"eta":0.3,"f":1.28,"e0":0,"mean":0.00001989,"phase":3,"Lam":0.04322},{"eta":0.3,"f":1.3,"e0":0.001,"mean":0.001068,"phase":3,"Lam":0.03862},{"eta":0.3,"f":1.3,"e0":0,"mean":0.00001859,"phase":3,"Lam":0.03862},{"eta":0.3,"f":1.32,"e0":0.001,"mean":0.001063,"phase":3,"Lam":0.03512},{"eta":0.3,"f":1.32,"e0":0,"mean":0.00001754,"phase":3,"Lam":0.03512},{"eta":0.3,"f":1.34,"e0":0.001,"mean":0.001058,"phase":3,"Lam":0.03243},{"eta":0.3,"f":1.34,"e0":0,"mean":0.00001672,"phase":3,"Lam":0.03243},{"eta":0.3,"f":1.36,"e0":0.001,"mean":0.001054,"phase":3,"Lam":0.03047},{"eta":0.3,"f":1.36,"e0":0,"mean":0.00001613,"phase":3,"Lam":0.03047},{"eta":0.3,"f":1.38,"e0":0.001,"mean":0.001051,"phase":3,"Lam":0.02908},{"eta":0.3,"f":1.38,"e0":0,"mean":0.00001573,"phase":3,"Lam":0.02908},{"eta":0.3,"f":1.4,"e0":0.001,"mean":0.001049,"phase":3,"Lam":0.02818},{"eta":0.3,"f":1.4,"e0":0,"mean":0.00001552,"phase":3,"Lam":0.02818},{"eta":0.3,"f":1.42,"e0":0.001,"mean":0.001048,"phase":3,"Lam":0.02774},{"eta":0.3,"f":1.42,"e0":0,"mean":0.00001549,"phase":3,"Lam":0.02774},{"eta":0.3,"f":1.44,"e0":0.001,"mean":0.001048,"phase":3,"Lam":0.02777},{"eta":0.3,"f":1.44,"e0":0,"mean":0.00001566,"phase":3,"Lam":0.02777},{"eta":0.477,"f":1,"e0":0.001,"mean":0.02882,"phase":1,"Lam":13.03},{"eta":0.477,"f":1,"e0":0,"mean":0.0271,"phase":1,"Lam":13.03},{"eta":0.477,"f":1.02,"e0":0.001,"mean":0.02411,"phase":1,"Lam":6.795},{"eta":0.477,"f":1.02,"e0":0,"mean":0.0202,"phase":1,"Lam":6.795},{"eta":0.477,"f":1.04,"e0":0.001,"mean":0.01771,"phase":1,"Lam":4.001},{"eta":0.477,"f":1.04,"e0":0,"mean":0.009743,"phase":1,"Lam":4.001},{"eta":0.477,"f":1.06,"e0":0.001,"mean":0.0116,"phase":1,"Lam":2.633},{"eta":0.477,"f":1.06,"e0":0,"mean":0.002702,"phase":1,"Lam":2.633},{"eta":0.477,"f":1.08,"e0":0.001,"mean":0.006927,"phase":1,"Lam":1.804},{"eta":0.477,"f":1.08,"e0":0,"mean":0.0009675,"phase":1,"Lam":1.804},{"eta":0.477,"f":1.1,"e0":0.001,"mean":0.004388,"phase":1,"Lam":1.283},{"eta":0.477,"f":1.1,"e0":0,"mean":0.0004727,"phase":1,"Lam":1.283},{"eta":0.477,"f":1.12,"e0":0.001,"mean":0.03372,"phase":2,"Lam":634.1},{"eta":0.477,"f":1.12,"e0":0,"mean":0.03341,"phase":2,"Lam":634.1},{"eta":0.477,"f":1.14,"e0":0.001,"mean":0.007212,"phase":3,"Lam":1.86},{"eta":0.477,"f":1.14,"e0":0,"mean":0.001018,"phase":3,"Lam":1.86},{"eta":0.477,"f":1.16,"e0":0.001,"mean":0.003233,"phase":3,"Lam":0.9716},{"eta":0.477,"f":1.16,"e0":0,"mean":0.0002904,"phase":3,"Lam":0.9716},{"eta":0.477,"f":1.18,"e0":0.001,"mean":0.002247,"phase":3,"Lam":0.636},{"eta":0.477,"f":1.18,"e0":0,"mean":0.0001631,"phase":3,"Lam":0.636},{"eta":0.477,"f":1.2,"e0":0.001,"mean":0.001832,"phase":3,"Lam":0.4596},{"eta":0.477,"f":1.2,"e0":0,"mean":0.0001116,"phase":3,"Lam":0.4596},{"eta":0.477,"f":1.22,"e0":0.001,"mean":0.001611,"phase":3,"Lam":0.3505},{"eta":0.477,"f":1.22,"e0":0,"mean":0.00008765,"phase":3,"Lam":0.3505},{"eta":0.477,"f":1.24,"e0":0.001,"mean":0.001406,"phase":3,"Lam":0.2427},{"eta":0.477,"f":1.24,"e0":0,"mean":0.00006526,"phase":3,"Lam":0.2427},{"eta":0.477,"f":1.26,"e0":0.001,"mean":0.001289,"phase":3,"Lam":0.1758},{"eta":0.477,"f":1.26,"e0":0,"mean":0.00004608,"phase":3,"Lam":0.1758},{"eta":0.477,"f":1.28,"e0":0.001,"mean":0.001234,"phase":3,"Lam":0.1379},{"eta":0.477,"f":1.28,"e0":0,"mean":0.00003795,"phase":3,"Lam":0.1379},{"eta":0.477,"f":1.3,"e0":0.001,"mean":0.001193,"phase":3,"Lam":0.1134},{"eta":0.477,"f":1.3,"e0":0,"mean":0.00003475,"phase":3,"Lam":0.1134},{"eta":0.477,"f":1.32,"e0":0.001,"mean":0.001147,"phase":3,"Lam":0.09657},{"eta":0.477,"f":1.32,"e0":0,"mean":0.00003195,"phase":3,"Lam":0.09657},{"eta":0.477,"f":1.34,"e0":0.001,"mean":0.001115,"phase":3,"Lam":0.08456},{"eta":0.477,"f":1.34,"e0":0,"mean":0.00002953,"phase":3,"Lam":0.08456},{"eta":0.477,"f":1.36,"e0":0.001,"mean":0.001099,"phase":3,"Lam":0.07658},{"eta":0.477,"f":1.36,"e0":0,"mean":0.00002789,"phase":3,"Lam":0.07658},{"eta":0.477,"f":1.38,"e0":0.001,"mean":0.001092,"phase":3,"Lam":0.07091},{"eta":0.477,"f":1.38,"e0":0,"mean":0.00002679,"phase":3,"Lam":0.07091},{"eta":0.477,"f":1.4,"e0":0.001,"mean":0.001089,"phase":3,"Lam":0.06708},{"eta":0.477,"f":1.4,"e0":0,"mean":0.00002612,"phase":3,"Lam":0.06708},{"eta":0.477,"f":1.42,"e0":0.001,"mean":0.001087,"phase":3,"Lam":0.06507},{"eta":0.477,"f":1.42,"e0":0,"mean":0.00002589,"phase":3,"Lam":0.06507},{"eta":0.477,"f":1.44,"e0":0.001,"mean":0.001087,"phase":3,"Lam":0.06433},{"eta":0.477,"f":1.44,"e0":0,"mean":0.00002598,"phase":3,"Lam":0.06433},{"eta":0.7,"f":1,"e0":0.001,"mean":0.03046,"phase":1,"Lam":18.45},{"eta":0.7,"f":1,"e0":0,"mean":0.02928,"phase":1,"Lam":18.45},{"eta":0.7,"f":1.02,"e0":0.001,"mean":0.02642,"phase":1,"Lam":9.314},{"eta":0.7,"f":1.02,"e0":0,"mean":0.02391,"phase":1,"Lam":9.314},{"eta":0.7,"f":1.04,"e0":0.001,"mean":0.02181,"phase":1,"Lam":5.55},{"eta":0.7,"f":1.04,"e0":0,"mean":0.01678,"phase":1,"Lam":5.55},{"eta":0.7,"f":1.06,"e0":0.001,"mean":0.01609,"phase":1,"Lam":3.566},{"eta":0.7,"f":1.06,"e0":0,"mean":0.007028,"phase":1,"Lam":3.566},{"eta":0.7,"f":1.08,"e0":0.001,"mean":0.01083,"phase":1,"Lam":2.492},{"eta":0.7,"f":1.08,"e0":0,"mean":0.002274,"phase":1,"Lam":2.492},{"eta":0.7,"f":1.1,"e0":0.001,"mean":0.00676,"phase":1,"Lam":1.771},{"eta":0.7,"f":1.1,"e0":0,"mean":0.0009185,"phase":1,"Lam":1.771},{"eta":0.7,"f":1.12,"e0":0.001,"mean":0.004539,"phase":1,"Lam":1.316},{"eta":0.7,"f":1.12,"e0":0,"mean":0.000492,"phase":1,"Lam":1.316},{"eta":0.7,"f":1.14,"e0":0.001,"mean":0.003331,"phase":1,"Lam":1.001},{"eta":0.7,"f":1.14,"e0":0,"mean":0.0003065,"phase":1,"Lam":1.001},{"eta":0.7,"f":1.16,"e0":0.001,"mean":0.00271,"phase":1,"Lam":0.8062},{"eta":0.7,"f":1.16,"e0":0,"mean":0.0002225,"phase":1,"Lam":0.8062},{"eta":0.7,"f":1.18,"e0":0.001,"mean":0.002246,"phase":1,"Lam":0.6355},{"eta":0.7,"f":1.18,"e0":0,"mean":0.0001629,"phase":1,"Lam":0.6355},{"eta":0.7,"f":1.2,"e0":0.001,"mean":0.002017,"phase":1,"Lam":0.538},{"eta":0.7,"f":1.2,"e0":0,"mean":0.0001329,"phase":1,"Lam":0.538},{"eta":0.7,"f":1.22,"e0":0.001,"mean":0.001808,"phase":1,"Lam":0.4505},{"eta":0.7,"f":1.22,"e0":0,"mean":0.0001087,"phase":1,"Lam":0.4505},{"eta":0.7,"f":1.24,"e0":0.001,"mean":0.001674,"phase":1,"Lam":0.3779},{"eta":0.7,"f":1.24,"e0":0,"mean":0.00009357,"phase":1,"Lam":0.3779},{"eta":0.7,"f":1.26,"e0":0.001,"mean":0.001571,"phase":1,"Lam":0.3303},{"eta":0.7,"f":1.26,"e0":0,"mean":0.00008304,"phase":1,"Lam":0.3303},{"eta":0.7,"f":1.28,"e0":0.001,"mean":0.001495,"phase":1,"Lam":0.2943},{"eta":0.7,"f":1.28,"e0":0,"mean":0.00007522,"phase":1,"Lam":0.2943},{"eta":0.7,"f":1.3,"e0":0.001,"mean":0.03341,"phase":2,"Lam":163.2},{"eta":0.7,"f":1.3,"e0":0,"mean":0.03328,"phase":2,"Lam":163.2},{"eta":0.7,"f":1.32,"e0":0.001,"mean":0.03371,"phase":2,"Lam":153.6},{"eta":0.7,"f":1.32,"e0":0,"mean":0.03356,"phase":2,"Lam":153.6},{"eta":0.7,"f":1.34,"e0":0.001,"mean":0.03415,"phase":2,"Lam":146.3},{"eta":0.7,"f":1.34,"e0":0,"mean":0.03406,"phase":2,"Lam":146.3},{"eta":0.7,"f":1.36,"e0":0.001,"mean":0.00407,"phase":3,"Lam":1.2},{"eta":0.7,"f":1.36,"e0":0,"mean":0.0004098,"phase":3,"Lam":1.2},{"eta":0.7,"f":1.38,"e0":0.001,"mean":0.003027,"phase":3,"Lam":0.9118},{"eta":0.7,"f":1.38,"e0":0,"mean":0.0002625,"phase":3,"Lam":0.9118},{"eta":0.7,"f":1.4,"e0":0.001,"mean":0.002575,"phase":3,"Lam":0.754},{"eta":0.7,"f":1.4,"e0":0,"mean":0.0002061,"phase":3,"Lam":0.754},{"eta":0.7,"f":1.42,"e0":0.001,"mean":0.002348,"phase":3,"Lam":0.6757},{"eta":0.7,"f":1.42,"e0":0,"mean":0.0001797,"phase":3,"Lam":0.6757},{"eta":0.7,"f":1.44,"e0":0.001,"mean":0.002238,"phase":3,"Lam":0.6306},{"eta":0.7,"f":1.44,"e0":0,"mean":0.0001664,"phase":3,"Lam":0.6306}],"grid":{"Lams":[0.125,0.25,0.5,1,1.5,2,3,4,6,8,12,16,24,32,48,64,128,256],"e0rs":[0.00001,0.0001,0.0003,0.001,0.003,0.01,0.03,0.1,0.2,0.3,0.5,0.7,1,1.5,2,3],"mean":[[0.00001215,0.0001215,0.0003646,0.001215,0.003646,0.01215,0.03646,0.1215,0.2429,0.3639,0.6007,0.8316,1.172,1.858,2.316,3.712],[0.00001419,0.0001419,0.0004257,0.001419,0.004257,0.01419,0.04257,0.1418,0.2827,0.4198,0.6886,0.9545,1.301,1.921,2.479,3.82],[0.00001936,0.0001936,0.0005807,0.001936,0.005807,0.01935,0.05799,0.1908,0.3689,0.533,0.8302,1.104,1.499,2.261,2.756,3.883],[0.00003382,0.0003382,0.001015,0.003382,0.01015,0.03378,0.1003,0.305,0.5284,0.7071,1.02,1.323,1.662,2.306,2.836,3.916],[0.00005696,0.0005696,0.001709,0.005696,0.01708,0.05661,0.1623,0.4201,0.6461,0.8145,1.102,1.407,1.704,2.333,2.863,3.917],[0.00009493,0.0009493,0.002848,0.009491,0.02842,0.09268,0.2424,0.5184,0.7306,0.8811,1.173,1.452,1.744,2.328,2.882,3.925],[0.0002599,0.002599,0.007794,0.02591,0.07592,0.2128,0.4037,0.6538,0.8319,0.9835,1.24,1.467,1.802,2.367,2.898,3.932],[0.0007096,0.007094,0.02123,0.06889,0.1763,0.3531,0.5281,0.7352,0.8947,1.034,1.299,1.532,1.839,2.375,2.9,3.933],[0.005305,0.05172,0.1346,0.2746,0.406,0.5397,0.6636,0.822,0.9636,1.08,1.33,1.529,1.869,2.398,2.908,3.938],[0.03894,0.2222,0.3367,0.4521,0.5474,0.6465,0.7242,0.8685,0.9979,1.118,1.341,1.583,1.871,2.398,2.912,3.941],[0.3323,0.4832,0.547,0.6142,0.675,0.7443,0.8133,0.9192,1.036,1.149,1.378,1.567,1.894,2.406,2.915,3.941],[0.5005,0.5989,0.6446,0.6949,0.7419,0.7955,0.8541,0.9478,1.062,1.175,1.375,1.586,1.897,2.409,2.917,3.941],[0.6427,0.7076,0.7393,0.7751,0.8092,0.8451,0.8951,0.9794,1.082,1.188,1.39,1.6,1.907,2.412,2.918,3.943],[0.7106,0.7613,0.7865,0.8154,0.8442,0.8806,0.9187,0.9957,1.098,1.196,1.396,1.603,1.906,2.412,2.921,3.943],[0.7887,0.8258,0.8445,0.8661,0.8873,0.9135,0.9416,1.014,1.113,1.213,1.406,1.61,1.911,2.414,2.922,3.943],[0.8281,0.8584,0.874,0.892,0.9092,0.9291,0.9579,1.025,1.12,1.217,1.411,1.609,1.91,2.415,2.922,3.944],[0.8951,0.9139,0.9236,0.9348,0.9459,0.9612,0.9816,1.041,1.132,1.227,1.418,1.616,1.914,2.417,2.923,3.945],[0.9366,0.9487,0.9542,0.9621,0.9693,0.9795,0.995,1.052,1.137,1.228,1.421,1.617,1.916,2.418,2.924,3.945]]},"paperRhea":0.028958904329100744}</script>
+<script>
+"use strict";
+const DATA = JSON.parse(document.getElementById("data").textContent);
+const ENGINE_SRC = document.getElementById("engine").textContent;
+const EV = window.Evection;
+
+/* ------------------------------------------------------------------ helpers */
+const $ = (id) => document.getElementById(id);
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function fmt(x, d = 3) {
+  if (x == null || !isFinite(x)) return "–";
+  const a = Math.abs(x);
+  if (a !== 0 && (a < 1e-3 || a >= 1e5)) return x.toExponential(Math.max(1, d - 1)).replace("e", "×10^").replace("+", "");
+  return x.toFixed(d);
+}
+function fmtSci(x, d = 2) {
+  if (x == null || !isFinite(x)) return "–";
+  if (x === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(x))), m = x / Math.pow(10, e);
+  if (e >= -2 && e <= 3) return x.toPrecision(d + 1);
+  return m.toFixed(d) + "×10" + String(e).replace(/-/g, "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]);
+}
+function stat(k, v, s, hl) { return `<div class="stat${hl ? " hl" : ""}"><span class="k">${k}</span><span class="v">${v}</span>${s ? `<span class="s">${s}</span>` : ""}</div>`; }
+function typeset(el) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(() => {}); }
+function legend(id, items) {
+  $(id).innerHTML = items.map((it) => `<span><i class="${it.dot ? "dot" : ""}" style="background:${cssVar(it.color)};${it.alpha ? "opacity:" + it.alpha : ""}"></i>${it.label}</span>`).join("");
+}
+
+/* ------------------------------------------------------------ worker pool */
+const workerURL = URL.createObjectURL(new Blob([ENGINE_SRC + "\n;(" + workerMain.toString() + ")();"], { type: "text/javascript" }));
+function workerMain() {
+  const E = self.Evection;
+  const ds = (arr, n) => { const a = Array.from(arr); if (a.length <= n) return a; const out = []; for (let i = 0; i < n; i++) out.push(a[Math.round(i * (a.length - 1) / (n - 1))]); return out; };
+  self.onmessage = (ev) => {
+    const { id, kind, cfg } = ev.data;
+    try {
+      let res;
+      if (kind === "sweep") {
+        const r = E.secularSweep(cfg);
+        res = { x: ds(r.x, 900), dc: ds(r.deltaOverC, 900), e: r.e.slice(0, 12).map((a) => ds(a, 900)), phi: r.phi.slice(0, 12).map((a) => ds(a, 900)),
+          eAll: r.e.map((a) => ds(a, 300)), phiAll: r.phi.map((a) => ds(a, 300)), dcAll: ds(r.deltaOverC, 300), ef: Array.from(r.ef), c: r.c, eStar: r.eStar };
+      } else if (kind === "nbody") {
+        const t0 = Date.now();
+        const nb = E.nbodyRun(cfg, (f) => self.postMessage({ id, progress: f }));
+        const S = nb.setup;
+        let sec = null;
+        if (cfg.compare) {
+          const s = E.secularSweep({ eps: cfg.eps, Lam: cfg.Lam, e0: cfg.e0, phi0: [cfg.phi0], K0: cfg.K0, K1: cfg.K1, nOut: 2000, alphaA: cfg.quadOnly ? 0 : S.alphaA, proper: false });
+          sec = { x: Array.from(s.x), e: Array.from(s.e[0]), phi: Array.from(s.phi[0]), dc: Array.from(s.deltaOverC), ef: s.ef[0] };
+        }
+        const n = nb.t.length, keep = Math.min(n, 2500);
+        const idx = Array.from({ length: keep }, (_, i) => Math.round(i * (n - 1) / Math.max(1, keep - 1)));
+        const Mt = (x) => (1 + S.mp) * Math.exp(-(x * S.tauN + S.tRes) / (2 * S.tauN));
+        res = { t: idx.map((i) => nb.t[i]), e: idx.map((i) => nb.e[i]), phi: idx.map((i) => nb.phi[i]), dc: idx.map((i) => nb.dOverC[i]),
+          inv: idx.map((i) => nb.ap[i] * Mt(nb.t[i])), ef: nb.ef, eStar: nb.eStar, S, nSteps: nb.nSteps, ms: Date.now() - t0, sec };
+      } else if (kind === "rhea") {
+        const r = E.secularPhysical(cfg);
+        res = { t: ds(r.t, 800), e: r.e.slice(0, 4).map((a) => ds(a, 800)), ef: Array.from(r.ef), eps: r.eps, c: r.c, fJ2: r.fJ2, eStar: r.eStar, Lam: r.Lam, npx: r.npx };
+      } else if (kind === "verify") {
+        res = runVerify(E, (i, row) => self.postMessage({ id, row: { i, ...row } }), cfg);
+      }
+      self.postMessage({ id, done: true, res });
+    } catch (err) {
+      self.postMessage({ id, done: true, error: String((err && err.stack) || err) });
+    }
+  };
+  function runVerify(E, emit, cfg) {
+    const phases = (n) => Array.from({ length: n }, (_, i) => 2 * Math.PI * (i + 0.5) / n);
+    const rms = (a) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / a.length);
+    const tests = [
+      () => { const p = E.nbodyPrecessionTest({ eps: 0.01, rRatio: 1 / 3, e0: 0.01, phi0: 0.3, steps: 200, nOrb: 600 });
+        return { exp: p.predicted, sim: p.measured, tol: 2e-3 }; },
+      () => { const o = E.nbodyRun({ eps: 0.01, Lam: 1, rRatio: 1 / 3, e0: 0.02, phi0: 0.5, steps: 150 }); const S = o.setup;
+        const Mt = (x) => (1 + S.mp) * Math.exp(-(x * S.tauN + S.tRes) / (2 * S.tauN));
+        const i0 = 0, i1 = o.t.length - 1, I0 = o.ap[i0] * Mt(o.t[i0]), I1 = o.ap[i1] * Mt(o.t[i1]);
+        return { exp: I0, sim: I1, tol: 2e-3 }; },
+      () => { const L = 1, es = E.eStar(3e-3), e0 = 1e-3 * es; const r = E.secularSweep({ eps: 3e-3, Lam: L, e0, phi0: phases(64), K0: 7, K1: 12 });
+        return { exp: E.linearAmp(L).rms, sim: rms(Array.from(r.ef)) / e0, tol: 0.03 }; },
+      () => { const L = 2.5, es = E.eStar(3e-3), e0 = 1e-4 * es; const r = E.secularSweep({ eps: 3e-3, Lam: L, e0, phi0: phases(64), K0: 7, K1: 12 });
+        return { exp: E.linearAmp(L).rms, sim: rms(Array.from(r.ef)) / e0, tol: 0.04 }; },
+      () => { const L = 1, es = E.eStar(3e-3), e0 = 1e-3 * es; const r = E.secularSweep({ eps: 3e-3, Lam: L, e0, phi0: phases(96), K0: 7, K1: 12 });
+        return { exp: E.linearAmp(L).hi, sim: Math.max(...Array.from(r.ef)) / e0, tol: 0.03 }; },
+      () => { const es = E.eStar(3e-3), r0 = 0.7, K0 = Math.pow(1 + 1.5 * r0, 2) + 5; const r = E.secularSweep({ eps: 3e-3, Lam: 256, e0: r0 * es, phi0: phases(16), K0, K1: 12 });
+        const m = Array.from(r.ef).reduce((a, b) => a + b, 0) / 16 / es; return { exp: E.adiabaticMap(r0 * es, es) / es, sim: m, tol: 0.03 }; },
+      () => { const es = E.eStar(3e-3); const r = E.secularSweep({ eps: 3e-3, Lam: 256, e0: 1e-3 * es, phi0: phases(16), K0: 7, K1: 12 });
+        const m = Array.from(r.ef).reduce((a, b) => a + b, 0) / 16 / es; return { exp: 1, sim: m, tol: 0.1 }; },
+      () => { // capture direction: the moon rides the stable island, W(e) = C(e); compare with the island centre
+        const eps = 3e-3, es = E.eStar(eps), c = E.cWidth(eps), K0 = 7, K1 = 12, L = 64, nOut = 2500;
+        const r = E.secularSweep({ eps, Lam: L, e0: 0.01 * es, phi0: phases(16), K0, K1, dir: -1, nOut });
+        const tauN = 2 * L / (Math.PI * c * c), t0 = -K0 * c * tauN, t1 = K1 * c * tauN, gT = 1 - 0.75 * eps;
+        const centre = (np) => { const tid = np * np * eps, f = (e) => { const s = Math.sqrt(1 - e * e); return gT / ((1 - e * e) ** 2) + 0.75 * tid * s - np - 3.75 * tid * s; };
+          let lo = 0, hi = 0.9; for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (f(mid) < 0) lo = mid; else hi = mid; } return lo; };
+        const nt = Math.floor(0.15 * nOut); let s2 = 0;
+        for (let i = nOut - nt; i < nOut; i++) { const t = t0 + (t1 - t0) * i / (nOut - 1); s2 += centre(Math.exp(t / tauN)) ** 2; }
+        const m = Array.from(r.ef).reduce((a, b) => a + b, 0) / 16; return { exp: Math.sqrt(s2 / nt) / es, sim: m / es, tol: 0.03 }; },
+      () => { const eps = 0.01, L = 1, es = E.eStar(eps), e0 = 0.05 * es, ph = phases(8);
+        const nb = ph.map((p) => E.nbodyRun({ eps, Lam: L, rRatio: 1 / 3, e0, phi0: p, steps: 200, quadOnly: true }).ef);
+        const s = E.secularSweep({ eps, Lam: L, e0, phi0: ph, K0: 6, K1: 9, proper: false }); return { exp: rms(Array.from(s.ef)) / es, sim: rms(nb) / es, tol: 0.08 }; },
+      () => { const eps = 0.01, L = 2, S = E.nbodySetup({ eps, Lam: L, rRatio: 1 / 3 }), ph = phases(2);
+        const nb = ph.map((p) => E.nbodyRun({ eps, Lam: L, rRatio: 1 / 3, e0: 0, phi0: p, steps: 200 }).ef);
+        const s = E.secularSweep({ eps, Lam: L, e0: 0, phi0: [0], K0: 6, K1: 9, alphaA: S.alphaA, proper: false }); return { exp: s.ef[0] / S.c ** 0.5, sim: rms(nb) / S.c ** 0.5, tol: 0.15 }; },
+      () => { const P = cfg.rhea, np0 = 2 * Math.PI / 29.457; const g = P.gJ2 + P.gExt; return { exp: P.Mx, sim: Math.sqrt(g / np0), tol: 2e-3 }; },
+      () => { const P = cfg.rhea, ph = Array.from({ length: 64 }, (_, i) => 2 * Math.PI * (i + 0.37) / 64); const AU = 1.495978707e8;
+        const r = E.secularPhysical({ nm: P.n_m, gJ2: P.gJ2, gExt: P.gExt, theta: 26.73 * Math.PI / 180, tM: P["tM_0.477"], e0: 1e-3, phi0: ph, K0: 7, K1: 12, nOut: 2500, alphaA: P.a_km / (9.5826 * AU / P.Mx) });
+        const m = Array.from(r.ef).reduce((a, b) => a + b, 0) / ph.length; return { exp: cfg.paperRhea, sim: m, tol: 0.03 }; },
+    ];
+    const rows = [];
+    for (let i = 0; i < tests.length; i++) {
+      emit(i, { state: "run" });
+      const t0 = Date.now();
+      let r;
+      try { r = tests[i](); r.dev = Math.abs(r.sim / r.exp - 1); r.state = r.dev <= r.tol ? "pass" : "fail"; }
+      catch (e) { r = { state: "fail", error: String(e) }; }
+      r.ms = Date.now() - t0;
+      rows.push(r); emit(i, r);
+    }
+    return rows;
+  }
+}
+const pool = {};
+let jobSeq = 0;
+function runJob(lane, kind, cfg, onProgress) {
+  if (pool[lane]) { pool[lane].w.terminate(); pool[lane].reject && pool[lane].reject(new Error("cancelled")); }
+  const w = new Worker(workerURL);
+  const id = ++jobSeq;
+  return new Promise((resolve, reject) => {
+    pool[lane] = { w, reject };
+    w.onmessage = (ev) => {
+      const m = ev.data;
+      if (m.id !== id) return;
+      if (!m.done) { onProgress && onProgress(m); return; }
+      w.terminate(); pool[lane] = null;
+      if (m.error) reject(new Error(m.error)); else resolve(m.res);
+    };
+    w.onerror = (e) => { w.terminate(); pool[lane] = null; reject(new Error(e.message || "worker error")); };
+    w.postMessage({ id, kind, cfg });
+  });
+}
+function cancelLane(lane) { if (pool[lane]) { pool[lane].w.terminate(); const r = pool[lane].reject; pool[lane] = null; r && r(new Error("cancelled")); } }
+
+/* ------------------------------------------------------------- plotting */
+function niceStep(span, n) { const raw = span / Math.max(1, n), p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
+function linTicks(a, b, n) { const s = niceStep(b - a, n), out = []; for (let v = Math.ceil(a / s) * s; v <= b + s * 1e-9; v += s) out.push(Math.abs(v) < s * 1e-9 ? 0 : v); return out; }
+function logTicks(a, b) { const out = []; for (let k = Math.floor(Math.log10(a)); k <= Math.ceil(Math.log10(b)); k++) { const v = Math.pow(10, k); if (v >= a * 0.999 && v <= b * 1.001) out.push(v); } return out; }
+function tickLabel(v, log) { if (log) { const k = Math.round(Math.log10(v)); return k === 0 ? "1" : k === 1 ? "10" : k === 2 ? "100" : k === -1 ? "0.1" : "10" + String(k).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]); } const a = Math.abs(v); return a === 0 ? "0" : a >= 1e4 || a < 1e-2 ? v.toExponential(0) : +v.toPrecision(4) + ""; }
+
+class Plot {
+  constructor(host, opts = {}) {
+    this.host = typeof host === "string" ? $(host) : host;
+    this.opts = opts;
+    this.cv = document.createElement("canvas"); this.host.appendChild(this.cv);
+    this.tip = document.createElement("div"); this.tip.className = "tip"; this.tip.hidden = true; this.host.appendChild(this.tip);
+    this.spec = null;
+    new ResizeObserver(() => this.draw()).observe(this.host);
+    this.cv.addEventListener("mousemove", (e) => this.hover(e));
+    this.cv.addEventListener("mouseleave", () => { this.hoverX = null; this.tip.hidden = true; this.draw(); });
+  }
+  set(spec) { this.spec = spec; this.draw(); }
+  geom() {
+    const w = this.host.clientWidth, h = this.host.clientHeight;
+    const m = { l: 56, r: 14, t: 10, b: 40 };
+    return { w, h, m, pw: Math.max(10, w - m.l - m.r), ph: Math.max(10, h - m.t - m.b) };
+  }
+  domains() {
+    const s = this.spec; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const se of s.series || []) for (let i = 0; i < se.x.length; i++) {
+      const x = se.x[i], y = se.y[i]; if (!isFinite(x) || !isFinite(y)) continue;
+      if (s.xLog && x <= 0) continue; if (s.yLog && y <= 0) continue;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    for (const r of s.hRefs || []) { y0 = Math.min(y0, r.y); y1 = Math.max(y1, r.y); }
+    if (s.xDomain) [x0, x1] = s.xDomain; if (s.yDomain) [y0, y1] = s.yDomain;
+    if (!isFinite(x0)) { x0 = 0; x1 = 1; } if (!isFinite(y0)) { y0 = 0; y1 = 1; }
+    if (!s.yDomain) { if (s.yLog) { y0 /= 1.3; y1 *= 1.3; } else { const pad = (y1 - y0 || Math.abs(y1) || 1) * 0.06; y0 = s.yZero ? Math.min(0, y0) : y0 - pad; y1 += pad; } }
+    if (x0 === x1) { x0 -= 0.5; x1 += 0.5; }
+    return { x0, x1, y0, y1 };
+  }
+  scales(g, d) {
+    const s = this.spec;
+    const fx = s.xLog ? (v) => g.m.l + (Math.log(v) - Math.log(d.x0)) / (Math.log(d.x1) - Math.log(d.x0)) * g.pw : (v) => g.m.l + (v - d.x0) / (d.x1 - d.x0) * g.pw;
+    const fy = s.yLog ? (v) => g.m.t + g.ph - (Math.log(v) - Math.log(d.y0)) / (Math.log(d.y1) - Math.log(d.y0)) * g.ph : (v) => g.m.t + g.ph - (v - d.y0) / (d.y1 - d.y0) * g.ph;
+    const ix = s.xLog ? (px) => Math.exp(Math.log(d.x0) + (px - g.m.l) / g.pw * (Math.log(d.x1) - Math.log(d.x0))) : (px) => d.x0 + (px - g.m.l) / g.pw * (d.x1 - d.x0);
+    return { fx, fy, ix };
+  }
+  draw() {
+    if (!this.spec) return;
+    const g = this.geom(), dpr = window.devicePixelRatio || 1;
+    this.cv.width = Math.round(g.w * dpr); this.cv.height = Math.round(g.h * dpr);
+    const ctx = this.cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, g.w, g.h);
+    const s = this.spec, d = this.domains(), { fx, fy } = this.scales(g, d);
+    this.cache = { g, d, fx, fy };
+    const ink2 = cssVar("--ink-2"), muted = cssVar("--muted"), grid = cssVar("--grid"), axis = cssVar("--axis");
+    ctx.font = `11.5px ${cssVar("--font-mono")}`;
+    // bands
+    for (const b of s.vBands || []) {
+      const a = fx(Math.max(b.x0, d.x0)), c = fx(Math.min(b.x1, d.x1)); if (c <= a) continue;
+      ctx.fillStyle = cssVar(b.color || "--accent-soft"); ctx.globalAlpha = b.alpha || 0.6; ctx.fillRect(a, g.m.t, c - a, g.ph); ctx.globalAlpha = 1;
+      if (b.label) { ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.fillText(b.label, (a + c) / 2, g.m.t + 12); }
+    }
+    // grid + ticks
+    const xt = s.xLog ? logTicks(d.x0, d.x1) : linTicks(d.x0, d.x1, Math.max(3, Math.floor(g.pw / 90)));
+    const yt = s.yLog ? logTicks(d.y0, d.y1) : linTicks(d.y0, d.y1, Math.max(3, Math.floor(g.ph / 50)));
+    ctx.strokeStyle = grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const v of xt) { const x = Math.round(fx(v)) + 0.5; ctx.moveTo(x, g.m.t); ctx.lineTo(x, g.m.t + g.ph); }
+    for (const v of yt) { const y = Math.round(fy(v)) + 0.5; ctx.moveTo(g.m.l, y); ctx.lineTo(g.m.l + g.pw, y); }
+    ctx.stroke();
+    ctx.strokeStyle = axis; ctx.beginPath(); ctx.moveTo(g.m.l + 0.5, g.m.t); ctx.lineTo(g.m.l + 0.5, g.m.t + g.ph + 0.5); ctx.lineTo(g.m.l + g.pw, g.m.t + g.ph + 0.5); ctx.stroke();
+    ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (const v of xt) ctx.fillText(tickLabel(v, s.xLog), fx(v), g.m.t + g.ph + 6);
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const v of yt) ctx.fillText(tickLabel(v, s.yLog), g.m.l - 6, fy(v));
+    ctx.fillStyle = ink2; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.font = `12.5px ${cssVar("--font-body")}`;
+    if (s.xLabel) ctx.fillText(s.xLabel, g.m.l + g.pw / 2, g.h - 2);
+    if (s.yLabel) { ctx.save(); ctx.translate(13, g.m.t + g.ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = "middle"; ctx.fillText(s.yLabel, 0, 0); ctx.restore(); }
+    // clip plot area
+    ctx.save(); ctx.beginPath(); ctx.rect(g.m.l, g.m.t - 2, g.pw + 2, g.ph + 4); ctx.clip();
+    for (const r of s.hRefs || []) {
+      const y = fy(r.y); ctx.strokeStyle = cssVar(r.color || "--ink-2"); ctx.lineWidth = 1.25; ctx.globalAlpha = 0.8;
+      ctx.beginPath(); ctx.moveTo(g.m.l, y); ctx.lineTo(g.m.l + g.pw, y); ctx.stroke(); ctx.globalAlpha = 1;
+      if (r.label) { ctx.fillStyle = cssVar("--ink-2"); ctx.font = `11.5px ${cssVar("--font-mono")}`; ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(r.label, g.m.l + g.pw - 4, y - 3); }
+    }
+    for (const se of s.series || []) {
+      const col = cssVar(se.color || "--series-1"); ctx.globalAlpha = se.alpha == null ? 1 : se.alpha;
+      if (se.kind === "dots") {
+        ctx.fillStyle = col; const r = se.r || 3.5;
+        for (let i = 0; i < se.x.length; i++) { const x = se.x[i], y = se.y[i]; if (!isFinite(y) || (s.yLog && y <= 0)) continue; ctx.beginPath(); ctx.arc(fx(x), fy(y), r, 0, 2 * Math.PI); ctx.fill(); }
+      } else if (se.kind === "bars") {
+        ctx.fillStyle = col; const bw = se.bw;
+        for (let i = 0; i < se.x.length; i++) { const a = fx(se.x[i] - bw / 2) + 1, b = fx(se.x[i] + bw / 2) - 1, y = fy(se.y[i]), y0 = fy(Math.max(d.y0, 0)); if (b - a < 1) continue; ctx.fillRect(a, Math.min(y, y0), b - a, Math.abs(y0 - y)); }
+      } else {
+        ctx.strokeStyle = col; ctx.lineWidth = se.width || 2; ctx.lineJoin = "round"; ctx.beginPath(); let pen = false;
+        for (let i = 0; i < se.x.length; i++) { const x = se.x[i], y = se.y[i]; if (!isFinite(y) || (s.yLog && y <= 0) || (se.breakAt && i > 0 && Math.abs(y - se.y[i - 1]) > se.breakAt)) { pen = false; if (!isFinite(y)) continue; } const X = fx(x), Y = fy(y); if (!pen) { ctx.moveTo(X, Y); pen = true; } else ctx.lineTo(X, Y); }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    for (const mk of s.markers || []) {
+      const X = fx(mk.x), Y = fy(mk.y); ctx.strokeStyle = cssVar(mk.color || "--accent"); ctx.fillStyle = cssVar("--surface"); ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(X, Y, mk.r || 6, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      if (mk.label) { ctx.fillStyle = cssVar("--ink"); ctx.font = `12px ${cssVar("--font-body")}`; ctx.textAlign = X > g.m.l + g.pw * 0.7 ? "right" : "left"; ctx.textBaseline = "bottom"; ctx.fillText(mk.label, X + (ctx.textAlign === "left" ? 9 : -9), Y - 6); }
+    }
+    if (this.hoverX != null) {
+      ctx.strokeStyle = cssVar("--ink-2"); ctx.lineWidth = 1; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(Math.round(this.hoverX) + 0.5, g.m.t); ctx.lineTo(Math.round(this.hoverX) + 0.5, g.m.t + g.ph); ctx.stroke(); ctx.globalAlpha = 1;
+      for (const p of this.hoverPts || []) { ctx.fillStyle = cssVar(p.color); ctx.strokeStyle = cssVar("--surface"); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.X, p.Y, 4.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
+    }
+    ctx.restore();
+  }
+  hover(ev) {
+    if (!this.spec || !this.cache) return;
+    const rect = this.cv.getBoundingClientRect(), px = ev.clientX - rect.left, py = ev.clientY - rect.top;
+    const { g, d, fx, fy } = this.cache;
+    if (px < g.m.l || px > g.m.l + g.pw) { this.hoverX = null; this.tip.hidden = true; this.draw(); return; }
+    const lines = [], pts = [];
+    const isDots = (this.spec.series || []).every((se) => se.kind === "dots" || se.kind === "bars" || se.noTip);
+    if (isDots) {
+      let best = null;
+      for (const se of this.spec.series) { if (se.noTip) continue; for (let i = 0; i < se.x.length; i++) { const X = fx(se.x[i]), Y = fy(se.y[i]); const dd = (X - px) ** 2 + (Y - py) ** 2; if (!best || dd < best.dd) best = { dd, se, i, X, Y }; } }
+      if (!best || best.dd > 30 * 30) { this.hoverX = null; this.tip.hidden = true; this.draw(); return; }
+      this.hoverX = null; this.hoverPts = [{ X: best.X, Y: best.Y, color: best.se.color }];
+      lines.push(`${this.spec.xName || "x"} = ${fmt(best.se.x[best.i], 3)}`, `${best.se.name}: ${fmt(best.se.y[best.i], 4)}`);
+      this.place(best.X, best.Y, lines); this.draw(); return;
+    }
+    const xv = this.scales(g, d).ix(px);
+    lines.push(`${this.spec.xName || "x"} = ${fmt(xv, 3)}`);
+    for (const se of this.spec.series) {
+      if (se.noTip || !se.x.length) continue;
+      let lo = 0, hi = se.x.length - 1; const asc = se.x[hi] >= se.x[0];
+      while (hi - lo > 1) { const mid = (lo + hi) >> 1; if ((se.x[mid] < xv) === asc) lo = mid; else hi = mid; }
+      const i = Math.abs(se.x[lo] - xv) < Math.abs(se.x[hi] - xv) ? lo : hi;
+      if (!isFinite(se.y[i])) continue;
+      lines.push(`${se.name}: ${fmt(se.y[i], 4)}`); pts.push({ X: fx(se.x[i]), Y: fy(se.y[i]), color: se.color });
+    }
+    this.hoverX = px; this.hoverPts = pts; this.place(px, py, lines); this.draw();
+  }
+  place(px, py, lines) {
+    this.tip.innerHTML = lines.join("<br>"); this.tip.hidden = false;
+    const w = this.tip.offsetWidth, hw = this.host.clientWidth;
+    this.tip.style.left = (px + 14 + w > hw ? px - 14 - w : px + 14) + "px"; this.tip.style.top = Math.max(0, py - 10) + "px";
+  }
+}
+
+/* phase portrait with marching-squares level curves */
+class Portrait {
+  constructor(host) {
+    this.host = $(host); this.cv = document.createElement("canvas"); this.host.appendChild(this.cv);
+    new ResizeObserver(() => this.draw()).observe(this.host);
+  }
+  set(spec) { this.spec = spec; this.draw(); }
+  draw() {
+    const s = this.spec; if (!s) return;
+    const w = this.host.clientWidth, h = this.host.clientHeight, dpr = window.devicePixelRatio || 1;
+    this.cv.width = Math.round(w * dpr); this.cv.height = Math.round(h * dpr);
+    const ctx = this.cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    const m = 38, size = Math.min(w, h) - m - 10, L = s.L, X0 = m, Y0 = 6;
+    const fx = (u) => X0 + (u + L) / (2 * L) * size, fy = (v) => Y0 + size - (v + L) / (2 * L) * size;
+    const N = 140, Z = new Float64Array((N + 1) * (N + 1));
+    let zmin = Infinity, zmax = -Infinity;
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+      const u = -L + 2 * L * i / N, v = -L + 2 * L * j / N, z = s.K(u, v); Z[j * (N + 1) + i] = z; if (isFinite(z)) { zmin = Math.min(zmin, z); zmax = Math.max(zmax, z); }
+    }
+    const grid = cssVar("--grid"), axis = cssVar("--axis"), muted = cssVar("--muted");
+    ctx.strokeStyle = axis; ctx.lineWidth = 1; ctx.strokeRect(X0 + 0.5, Y0 + 0.5, size, size);
+    ctx.strokeStyle = grid; ctx.beginPath(); ctx.moveTo(fx(0), Y0); ctx.lineTo(fx(0), Y0 + size); ctx.moveTo(X0, fy(0)); ctx.lineTo(X0 + size, fy(0)); ctx.stroke();
+    const contour = (lev, col, lw, alpha) => {
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.globalAlpha = alpha; ctx.beginPath();
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+        const a = Z[j * (N + 1) + i] - lev, b = Z[j * (N + 1) + i + 1] - lev, c = Z[(j + 1) * (N + 1) + i + 1] - lev, d = Z[(j + 1) * (N + 1) + i] - lev;
+        const pts = [];
+        const u0 = -L + 2 * L * i / N, v0 = -L + 2 * L * j / N, du = 2 * L / N;
+        if ((a > 0) !== (b > 0)) pts.push([u0 + du * a / (a - b), v0]);
+        if ((b > 0) !== (c > 0)) pts.push([u0 + du, v0 + du * b / (b - c)]);
+        if ((c > 0) !== (d > 0)) pts.push([u0 + du * (1 - c / (c - d)), v0 + du]);
+        if ((d > 0) !== (a > 0)) pts.push([u0, v0 + du * (1 - d / (d - a))]);
+        for (let k = 0; k + 1 < pts.length; k += 2) { ctx.moveTo(fx(pts[k][0]), fy(pts[k][1])); ctx.lineTo(fx(pts[k + 1][0]), fy(pts[k + 1][1])); }
+      }
+      ctx.stroke(); ctx.globalAlpha = 1;
+    };
+    const nl = 22;
+    for (let q = 1; q < nl; q++) { const lev = zmin + (zmax - zmin) * Math.pow(q / nl, 1.6); contour(lev, cssVar("--series-1"), 1, 0.45); }
+    for (const lev of s.special || []) contour(lev, cssVar("--accent"), 2, 1);
+    if (s.traj) {
+      ctx.strokeStyle = cssVar("--series-2"); ctx.lineWidth = 2; ctx.beginPath();
+      s.traj.forEach((p, i) => { const X = fx(p[0]), Y = fy(p[1]); if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y); }); ctx.stroke();
+      const last = s.traj[s.traj.length - 1]; if (last) { ctx.fillStyle = cssVar("--series-2"); ctx.beginPath(); ctx.arc(fx(last[0]), fy(last[1]), 4.5, 0, 2 * Math.PI); ctx.fill(); }
+    }
+    ctx.fillStyle = muted; ctx.font = `11.5px ${cssVar("--font-mono")}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (const v of linTicks(-L, L, 4)) { ctx.fillText(tickLabel(v), fx(v), Y0 + size + 5); }
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const v of linTicks(-L, L, 4)) { ctx.fillText(tickLabel(v), X0 - 5, fy(v)); }
+    ctx.fillStyle = cssVar("--ink-2"); ctx.font = `12.5px ${cssVar("--font-body")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText("e cos φ / e⋆", X0 + size / 2, Y0 + size + 34);
+    ctx.save(); ctx.translate(11, Y0 + size / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = "middle"; ctx.fillText("e sin φ / e⋆", 0, 0); ctx.restore();
+  }
+}
+
+/* sequential heat map on log-log axes */
+class HeatMap extends Plot {
+  draw() {
+    const s = this.spec; if (!s) return;
+    const g = this.geom(); g.m.r = 70; g.pw = Math.max(10, g.w - g.m.l - g.m.r);
+    const dpr = window.devicePixelRatio || 1;
+    this.cv.width = Math.round(g.w * dpr); this.cv.height = Math.round(g.h * dpr);
+    const ctx = this.cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, g.w, g.h);
+    const xs = s.x, ys = s.y, lx = xs.map(Math.log), ly = ys.map(Math.log);
+    const bx = (i) => i === 0 ? lx[0] - (lx[1] - lx[0]) / 2 : i === lx.length ? lx[lx.length - 1] + (lx[lx.length - 1] - lx[lx.length - 2]) / 2 : (lx[i - 1] + lx[i]) / 2;
+    const by = (j) => j === 0 ? ly[0] - (ly[1] - ly[0]) / 2 : j === ly.length ? ly[ly.length - 1] + (ly[ly.length - 1] - ly[ly.length - 2]) / 2 : (ly[j - 1] + ly[j]) / 2;
+    const X0 = bx(0), X1 = bx(lx.length), Y0 = by(0), Y1 = by(ly.length);
+    const fx = (l) => g.m.l + (l - X0) / (X1 - X0) * g.pw, fy = (l) => g.m.t + g.ph - (l - Y0) / (Y1 - Y0) * g.ph;
+    this.cache = { g, fx, fy, bx, by };
+    const stops = ["--ramp-0", "--ramp-1", "--ramp-2", "--ramp-3", "--ramp-4", "--ramp-5"].map((n) => hexToRgb(cssVar(n)));
+    const col = (v) => { const t = Math.max(0, Math.min(1, (v - s.zmin) / (s.zmax - s.zmin))) * (stops.length - 1), k = Math.min(stops.length - 2, Math.floor(t)), f = t - k; const a = stops[k], b = stops[k + 1]; return `rgb(${a[0] + (b[0] - a[0]) * f | 0},${a[1] + (b[1] - a[1]) * f | 0},${a[2] + (b[2] - a[2]) * f | 0})`; };
+    for (let i = 0; i < xs.length; i++) for (let j = 0; j < ys.length; j++) {
+      const v = s.z[i][j]; ctx.fillStyle = col(s.zTransform ? s.zTransform(v) : v);
+      const a = fx(bx(i)), b = fx(bx(i + 1)), c = fy(by(j + 1)), d = fy(by(j));
+      ctx.fillRect(a, c, b - a + 0.5, d - c + 0.5);
+    }
+    const muted = cssVar("--muted"), ink2 = cssVar("--ink-2");
+    ctx.font = `11.5px ${cssVar("--font-mono")}`; ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (const v of logTicks(Math.exp(X0), Math.exp(X1))) ctx.fillText(tickLabel(v, true), fx(Math.log(v)), g.m.t + g.ph + 6);
+    ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (const v of logTicks(Math.exp(Y0), Math.exp(Y1))) ctx.fillText(tickLabel(v, true), g.m.l - 6, fy(Math.log(v)));
+    ctx.fillStyle = ink2; ctx.font = `12.5px ${cssVar("--font-body")}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.fillText(s.xLabel, g.m.l + g.pw / 2, g.h - 2);
+    ctx.save(); ctx.translate(13, g.m.t + g.ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = "middle"; ctx.fillText(s.yLabel, 0, 0); ctx.restore();
+    // colour bar
+    const cbx = g.m.l + g.pw + 18, cbw = 12;
+    for (let k = 0; k < g.ph; k++) { const v = s.zmin + (s.zmax - s.zmin) * (1 - k / g.ph); ctx.fillStyle = col(v); ctx.fillRect(cbx, g.m.t + k, cbw, 1.5); }
+    ctx.fillStyle = muted; ctx.font = `11px ${cssVar("--font-mono")}`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for (const t of s.cbTicks) { const y = g.m.t + g.ph * (1 - (t.v - s.zmin) / (s.zmax - s.zmin)); ctx.fillText(t.label, cbx + cbw + 4, y); }
+    if (s.marker) {
+      const X = fx(Math.log(s.marker.x)), Y = fy(Math.log(s.marker.y));
+      ctx.strokeStyle = cssVar("--accent"); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, 8, 0, 2 * Math.PI); ctx.stroke();
+      ctx.strokeStyle = cssVar("--surface"); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X, Y, 10.5, 0, 2 * Math.PI); ctx.stroke();
+    }
+  }
+  hover(ev) {
+    const s = this.spec; if (!s || !this.cache) return;
+    const rect = this.cv.getBoundingClientRect(), px = ev.clientX - rect.left, py = ev.clientY - rect.top, { g, fx, fy, bx, by } = this.cache;
+    let ii = -1, jj = -1;
+    for (let i = 0; i < s.x.length; i++) if (px >= fx(bx(i)) && px < fx(bx(i + 1))) ii = i;
+    for (let j = 0; j < s.y.length; j++) if (py <= fy(by(j)) && py > fy(by(j + 1))) jj = j;
+    if (ii < 0 || jj < 0) { this.tip.hidden = true; return; }
+    this.place(px, py, [`Λ = ${fmt(s.x[ii], 3)}`, `e₀/e⋆ = ${fmt(s.y[jj], 4)}`, `mean e_f/e⋆ = ${fmt(s.z[ii][jj], 3)}`]);
+  }
+}
+function hexToRgb(h) { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map((c) => c + c).join(""); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+
+/* ------------------------------------------------------------------ tabs */
+const tabs = ["sweep", "nbody", "rhea", "verify", "eqs"];
+function showTab(name) {
+  for (const t of tabs) { $("tb-" + t).setAttribute("aria-selected", t === name ? "true" : "false"); $("tab-" + t).hidden = t !== name; }
+  typeset($("tab-" + name));
+  try { localStorage.setItem("evlab-tab", name); } catch (e) {}
+  window.dispatchEvent(new Event("resize"));
+}
+for (const t of tabs) $("tb-" + t).addEventListener("click", () => showTab(t));
+document.querySelector(".tabs").addEventListener("keydown", (e) => {
+  const i = tabs.findIndex((t) => $("tb-" + t).getAttribute("aria-selected") === "true");
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const j = (i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length; showTab(tabs[j]); $("tb-" + tabs[j]).focus(); }
+});
+
+/* ============================================================ SWEEP LAB */
+const swPlotE = new Plot("ch-sw-e"), swPlotPh = new Plot("ch-sw-ph"), swPortrait = new Portrait("ch-sw-pp"), swHeat = new HeatMap("ch-sw-hm");
+let swLast = null;
+function swParams() {
+  const eps = Math.pow(10, +$("sw-eps").value), Lam = Math.pow(10, +$("sw-lam").value), e0r = $("sw-circ").checked ? 0 : Math.pow(10, +$("sw-e0").value);
+  const theta = +$("sw-th").value * Math.PI / 180, fJ2 = +$("sw-fj").value, oct = $("sw-oct").checked, alpha = Math.pow(10, +$("sw-al").value);
+  const dir = +$("sw-dir").value, n = +$("sw-n").value;
+  return { eps, Lam, e0r, theta, fJ2, oct, alpha, dir, n };
+}
+function swUpdateLabels() {
+  const p = swParams();
+  $("sw-eps-o").textContent = fmtSci(p.eps); $("sw-lam-o").textContent = fmt(p.Lam, p.Lam < 10 ? 2 : 1);
+  $("sw-e0-o").textContent = $("sw-circ").checked ? "0" : fmtSci(p.e0r); $("sw-th-o").textContent = (+$("sw-th").value).toFixed(1) + "°";
+  $("sw-fj-o").textContent = p.fJ2.toFixed(2); $("sw-al-o").textContent = fmtSci(p.alpha); $("sw-n-o").textContent = p.n;
+  $("sw-pd-o").textContent = (+$("sw-pd").value).toFixed(2);
+  $("sw-al").disabled = !p.oct; $("sw-e0").disabled = $("sw-circ").checked;
+}
+function swRun() {
+  const p = swParams(); swUpdateLabels();
+  const es = EV.eStar(p.eps, p.theta, p.fJ2), c = EV.cWidth(p.eps, p.theta);
+  const e0 = p.e0r * es, K0 = Math.max(7, Math.pow(1 + 1.5 * p.e0r, 2) + 5), K1 = 12;
+  const phis = Array.from({ length: p.n }, (_, i) => 2 * Math.PI * (i + 0.5) / p.n);
+  const cfg = { eps: p.eps, Lam: p.Lam, e0, phi0: phis, theta: p.theta, fJ2: p.fJ2, K0, K1, nOut: 2500, dir: p.dir, alphaA: p.oct ? p.alpha : 0 };
+  $("sw-status").textContent = "Integrating…"; $("sw-run").disabled = true;
+  const t0 = performance.now();
+  runJob("sweep", "sweep", cfg).then((r) => {
+    $("sw-run").disabled = false; $("sw-status").textContent = `${p.n} trajectories integrated in ${((performance.now() - t0) / 1000).toFixed(2)} s.`;
+    swLast = { p, r, es, c, e0, phis, K0 };
+    swRender();
+  }).catch((e) => { if (e.message !== "cancelled") { $("sw-run").disabled = false; $("sw-status").textContent = "Run failed: " + e.message; } });
+}
+function swRender() {
+  if (!swLast) return;
+  const { p, r, es, c, e0, phis } = swLast;
+  const ef = r.ef.map((x) => x / es);
+  const mean = ef.reduce((a, b) => a + b, 0) / ef.length, rmsv = Math.sqrt(ef.reduce((a, b) => a + b * b, 0) / ef.length);
+  const sorted = ef.slice().sort((a, b) => a - b), q = (f) => sorted[Math.min(sorted.length - 1, Math.round(f * (sorted.length - 1)))];
+  const lin = EV.linearAmp(p.Lam), adi = p.e0r > 0 ? EV.adiabaticMap(e0, es) / es : 1;
+  const fo = EV.fOct(p.theta), c4 = Math.pow(Math.cos(p.theta / 2), 4);
+  const seed = p.oct ? 0.5 * p.alpha * Math.abs(fo) / c4 * Math.sqrt(p.Lam) / es : 0;
+  const eff0 = Math.max(p.e0r, seed);
+  let regime, chip;
+  if (p.dir === -1) { regime = "Capture direction"; chip = "chip run"; }
+  else if (eff0 === 0) { regime = "No seed: stays circular"; chip = "chip"; }
+  else if (eff0 * Math.exp(p.Lam) < 0.3) { regime = "Linear (Landau–Zener)"; chip = "chip"; }
+  else if (p.Lam > 2 * Math.log(1 / Math.max(eff0, 1e-12)) + 4) { regime = "Adiabatic"; chip = "chip acc"; }
+  else { regime = "Transitional"; chip = "chip"; }
+  $("sw-stats").innerHTML =
+    stat("Band half-width c", fmt(c, 5), "in units of n_p") +
+    stat("Universal e⋆", fmt(es, 4), "√(2c/β)") +
+    stat("Initial e₀", fmt(e0, 5), p.e0r ? fmt(p.e0r, 4) + " e⋆" : "exactly circular") +
+    stat("Simulated mean e_f/e⋆", fmt(mean, 3), `5–95%: ${fmt(q(0.05), 3)}–${fmt(q(0.95), 3)}`, true) +
+    stat("Landau–Zener rms", !p.e0r ? "–" : p.e0r * lin.rms > 0.5 ? "saturated" : fmt(p.e0r * lin.rms, 3), p.e0r * lin.rms > 0.5 ? `linear gain ${fmtSci(lin.rms)} would exceed e⋆; nonlinear regime` : "linear theory; simulated rms " + fmt(rmsv, 3)) +
+    stat("Adiabatic jump map", p.dir === 1 ? fmt(adi, 3) : "n/a", "limit Λ → ∞") +
+    (p.oct ? stat("Octupole seed", fmt(seed, 4) + " e⋆", "½(a_m/a_p)|f_oct|√Λ / cos⁴(θ/2)") : "") +
+    `<div class="stat"><span class="k">Regime</span><span class="v"><span class="${chip}">${regime}</span></span></div>`;
+  // e(t)
+  const series = [];
+  const nShow = Math.min(r.e.length, 10);
+  for (let j = 0; j < nShow; j++) series.push({ name: `member ${j + 1}`, x: r.dc, y: r.e[j].map((v) => v / es), color: "--series-1", width: j === 0 ? 2 : 1.25, alpha: j === 0 ? 1 : 0.45, noTip: j > 0 });
+  const dcMin = Math.min(...r.dc), dcMax = Math.max(...r.dc);
+  swPlotE.set({ series, xLabel: "detuning δ / c", yLabel: "e / e⋆", xName: "δ/c", vBands: [{ x0: -1, x1: 1, label: "parametric band" }], hRefs: [{ y: 1, label: "e⋆" }], yZero: true, xDomain: [Math.max(dcMin, -7), Math.min(dcMax, 12)] });
+  legend("lg-sw-e", [{ label: "member 1", color: "--series-1" }, { label: "other members", color: "--series-1", alpha: 0.45 }, { label: "|δ| < c", color: "--accent-soft" }]);
+  // outcome by phase
+  const phDeg = phis.map((x) => x * 180 / Math.PI);
+  const refs = [];
+  if (p.e0r && p.dir === 1) refs.push({ y: adi, label: "adiabatic map" });
+  if (p.e0r && lin.hi * p.e0r < 4) refs.push({ y: lin.hi * p.e0r, label: "LZ max", color: "--muted" });
+  swPlotPh.set({ series: [{ name: "e_f/e⋆", x: phDeg, y: ef, kind: "dots", color: "--series-1", r: 4 }], xLabel: "initial phase φ₀ (deg)", yLabel: "e_f / e⋆", xName: "φ₀", xDomain: [0, 360], hRefs: refs, yZero: true });
+  legend("lg-sw-ph", [{ label: "simulated", color: "--series-1", dot: true }].concat(refs.length ? [{ label: "theory", color: "--ink-2" }] : []));
+  swRenderPortrait();
+  swRenderHeat();
+}
+function swRenderPortrait() {
+  if (!swLast) return;
+  const { p, r, es, c } = swLast;
+  const dcSel = +$("sw-pd").value; $("sw-pd-o").textContent = dcSel.toFixed(2);
+  const delta = dcSel * c;
+  const ft = 0.5 * (3 * Math.cos(p.theta) ** 2 - 1);
+  // frozen parameters at this detuning: n_p such that gTot/n_p - 1 + 3/4 eps ft = delta
+  const gTot = 1 - 0.75 * p.eps * ft, np = gTot / (1 + delta - 0.75 * p.eps * ft);
+  const wJ2 = p.fJ2 * gTot / np, wExt = (1 - p.fJ2) * gTot / np, epsNow = p.eps * np;
+  const alphaNow = p.oct ? p.alpha * Math.sqrt(np) : 0, Fo = 0.9375 * epsNow * alphaNow * EV.fOct(p.theta);
+  const maxE = Math.max(2.2, ...r.eAll.map((a) => Math.max(...a.map((v) => v / es)))) * 1.1;
+  const L = Math.min(maxE, 0.95 / es);
+  const K = (u, v) => { const e = Math.hypot(u, v) * es; if (e >= 0.99) return NaN; const phi = Math.atan2(v, u); return EV.hamiltonian(e, phi, wJ2, wExt, epsNow, p.theta) + Fo * e * Math.cos(phi); };
+  // special levels: through the origin and through critical points on the h-axis
+  const special = [K(0, 0)];
+  const row = []; for (let i = -400; i <= 400; i++) row.push([i / 400 * L, K(i / 400 * L, 0)]);
+  for (let i = 1; i < row.length - 1; i++) if (Math.abs(row[i][0]) > 0.02 * L && ((row[i][1] - row[i - 1][1]) * (row[i + 1][1] - row[i][1]) < 0)) special.push(row[i][1]);
+  // trajectory segment near this detuning (member 1)
+  const traj = []; const dc = r.dcAll;
+  for (let i = 0; i < dc.length; i++) if (Math.abs(dc[i] - dcSel) < 0.6) traj.push([r.eAll[0][i] / es * Math.cos(r.phiAll[0][i]), r.eAll[0][i] / es * Math.sin(r.phiAll[0][i])]);
+  swPortrait.set({ K, L, special: special.slice(0, 4), traj });
+  legend("lg-sw-pp", [{ label: "level curves", color: "--series-1", alpha: 0.6 }, { label: "separatrices", color: "--accent" }, { label: "member 1 near this δ", color: "--series-2" }]);
+}
+function swRenderHeat() {
+  const G = DATA.grid; if (!G) { $("ch-sw-hm").innerHTML = '<p class="note">Grid not embedded.</p>'; return; }
+  const p = swLast ? swLast.p : swParams();
+  const xs = G.Lams, ys = G.e0rs, z = xs.map((_, i) => ys.map((_, j) => G.mean[i][j]));
+  const tr = (v) => Math.log10(Math.max(v, 1e-4));
+  swHeat.set({ x: xs, y: ys, z, zTransform: tr, zmin: -4, zmax: Math.log10(4), xLabel: "adiabaticity Λ", yLabel: "e₀ / e⋆",
+    cbTicks: [{ v: -4, label: "10⁻⁴" }, { v: -3, label: "10⁻³" }, { v: -2, label: "10⁻²" }, { v: -1, label: "0.1" }, { v: 0, label: "1" }, { v: Math.log10(3), label: "3" }],
+    marker: p.e0r > 0 ? { x: Math.min(Math.max(p.Lam, xs[0]), xs[xs.length - 1]), y: Math.min(Math.max(p.e0r, ys[0]), ys[ys.length - 1]) } : null });
+  legend("lg-sw-hm", [{ label: "mean e_f/e⋆ (log colour scale)", color: "--ramp-3" }, { label: "your parameters", color: "--accent", dot: true }]);
+}
+const SW_PRESETS = {
+  linear: { eps: -2.52, lam: 0.0, e0: -2, circ: false, th: 0, fj: 1, oct: false, dir: 1 },
+  plateau: { eps: -2.52, lam: 2.2, e0: -3, circ: false, th: 0, fj: 1, oct: false, dir: 1 },
+  eccentric: { eps: -2.52, lam: 1.6, e0: 0.0, circ: false, th: 0, fj: 1, oct: false, dir: 1 },
+  circular: { eps: -2.52, lam: 1.0, e0: -2, circ: true, th: 0, fj: 1, oct: true, al: -2.6, dir: 1 },
+  capture: { eps: -2.52, lam: 1.8, e0: -2, circ: false, th: 0, fj: 1, oct: false, dir: -1 },
+};
+document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("click", () => {
+  const P = SW_PRESETS[b.dataset.preset];
+  $("sw-eps").value = P.eps; $("sw-lam").value = P.lam; $("sw-e0").value = P.e0; $("sw-circ").checked = P.circ; $("sw-th").value = P.th; $("sw-fj").value = P.fj;
+  $("sw-oct").checked = P.oct; if (P.al != null) $("sw-al").value = P.al; $("sw-dir").value = P.dir; swRun();
+}));
+$("sweepForm").addEventListener("submit", (e) => { e.preventDefault(); swRun(); });
+let swTimer = null;
+$("sweepForm").addEventListener("input", (e) => { swUpdateLabels(); if (e.target.id === "sw-pd") return; clearTimeout(swTimer); swTimer = setTimeout(swRun, 350); });
+$("sw-pd").addEventListener("input", swRenderPortrait);
+
+/* ============================================================ N-BODY LAB */
+const nbPlotE = new Plot("ch-nb-e"), nbPlotPhi = new Plot("ch-nb-phi"), nbPlotAd = new Plot("ch-nb-ad");
+function nbParams() {
+  return { eps: Math.pow(10, +$("nb-eps").value), Lam: Math.pow(10, +$("nb-lam").value), e0r: +$("nb-e0").value, phi0: +$("nb-ph").value * Math.PI / 180,
+    rRatio: +$("nb-rr").value, mp: Math.pow(10, +$("nb-mp").value), steps: +$("nb-st").value, quadOnly: $("nb-tide").value === "quad" };
+}
+function nbLabels() {
+  const p = nbParams();
+  $("nb-eps-o").textContent = fmtSci(p.eps); $("nb-lam-o").textContent = fmt(p.Lam, 2); $("nb-e0-o").textContent = p.e0r.toFixed(2); $("nb-ph-o").textContent = $("nb-ph").value + "°";
+  $("nb-rr-o").textContent = p.rRatio.toFixed(2); $("nb-mp-o").textContent = fmtSci(p.mp); $("nb-st-o").textContent = p.steps;
+  const K0 = Math.max(6, Math.pow(1 + 1.5 * p.e0r, 2) + 5), S = EV.nbodySetup({ eps: p.eps, Lam: p.Lam, rRatio: p.rRatio, mp: p.mp, K0, K1: 9 });
+  const steps = S.tEnd / S.Pm * p.steps;
+  $("nb-cost").textContent = `${fmtSci(S.tEnd / S.Pm)} moon orbits · ${fmtSci(steps)} steps · roughly ${Math.max(1, Math.round(steps * 1.7e-7 * 4)) } s`;
+}
+function nbRun() {
+  const p = nbParams(); nbLabels();
+  const es = EV.eStar(p.eps), K0 = Math.max(6, Math.pow(1 + 1.5 * p.e0r, 2) + 5), K1 = 9;
+  const cfg = { eps: p.eps, Lam: p.Lam, e0: p.e0r * es, phi0: p.phi0, rRatio: p.rRatio, mp: p.mp, steps: p.steps, K0, K1, quadOnly: p.quadOnly, compare: true };
+  $("nb-run").disabled = true; $("nb-cancel").disabled = false; $("nb-status").textContent = "Integrating the three-body problem…"; $("nb-prog").style.width = "0%";
+  runJob("nbody", "nbody", cfg, (m) => { if (m.progress != null) $("nb-prog").style.width = (100 * m.progress).toFixed(1) + "%"; }).then((r) => {
+    $("nb-run").disabled = false; $("nb-cancel").disabled = true; $("nb-prog").style.width = "100%";
+    $("nb-status").textContent = `${fmtSci(r.nSteps)} steps in ${(r.ms / 1000).toFixed(1)} s.`;
+    nbRender(p, r, es);
+  }).catch((e) => { $("nb-run").disabled = false; $("nb-cancel").disabled = true; $("nb-status").textContent = e.message === "cancelled" ? "Cancelled." : "Run failed: " + e.message; });
+}
+function nbRender(p, r, es) {
+  const S = r.S, inv0 = r.inv[0], invDrift = Math.max(...r.inv.map((v) => Math.abs(v / inv0 - 1)));
+  const dev = r.sec ? r.ef / r.sec.ef - 1 : NaN;
+  $("nb-stats").innerHTML =
+    stat("N-body e_f / e⋆", fmt(r.ef / es, 4), "rms over the last 12% of the run", true) +
+    stat("Secular e_f / e⋆", r.sec ? fmt(r.sec.ef / es, 4) : "–", p.quadOnly ? "quadrupole model" : "quadrupole + octupole") +
+    stat("Difference", isFinite(dev) ? (100 * dev).toFixed(1) + "%" : "–", "expected O(ε) for one phase") +
+    stat("Derived J₂", fmt(S.J2, 4), "so that ϖ̇ = n_p at resonance") +
+    stat("a_m / a_p", fmtSci(S.alphaA), "octupole lever arm") +
+    stat("Max drift of a_p M", fmtSci(invDrift), "adiabatic invariant");
+  const series = [{ name: "N-body", x: r.dc, y: r.e.map((v) => v / es), color: "--series-1", width: 1.5 }];
+  if (r.sec) series.push({ name: "secular", x: r.sec.dc, y: r.sec.e.map((v) => v / es), color: "--series-2", width: 2 });
+  nbPlotE.set({ series, xLabel: "detuning δ / c", yLabel: "e / e⋆", xName: "δ/c", vBands: [{ x0: -1, x1: 1, label: "parametric band" }], hRefs: [{ y: 1, label: "e⋆" }], yZero: true });
+  legend("lg-nb-e", [{ label: "N-body (orbit-averaged osculating e)", color: "--series-1" }, { label: "secular theory", color: "--series-2" }]);
+  const sp = [{ name: "N-body φ", x: r.dc, y: r.phi.map((v) => v * 180 / Math.PI), color: "--series-1", kind: "dots", r: 1.6 }];
+  if (r.sec) sp.push({ name: "secular φ", x: r.sec.dc, y: r.sec.phi.map((v) => v * 180 / Math.PI), color: "--series-2", kind: "dots", r: 1.2, alpha: 0.7 });
+  nbPlotPhi.set({ series: sp, xLabel: "δ / c", yLabel: "φ (deg)", xName: "δ/c", yDomain: [-180, 180] });
+  legend("lg-nb-phi", [{ label: "N-body", color: "--series-1", dot: true }, { label: "secular", color: "--series-2", dot: true }]);
+  nbPlotAd.set({ series: [{ name: "a_p M / initial − 1", x: r.dc, y: r.inv.map((v) => v / inv0 - 1), color: "--series-3", width: 2 }], xLabel: "δ / c", yLabel: "relative drift", xName: "δ/c" });
+  legend("lg-nb-ad", [{ label: "a_p (M⋆ + m_p) relative to start", color: "--series-3" }]);
+}
+const NB_PRESETS = { quick: { eps: -2, lam: 0.3, e0: 0.05, st: 200 }, circ: { eps: -2, lam: 0.3, e0: 0, st: 200 }, adiab: { eps: -2, lam: 1.0, e0: 0.05, st: 160 } };
+document.querySelectorAll("[data-nbpreset]").forEach((b) => b.addEventListener("click", () => { const P = NB_PRESETS[b.dataset.nbpreset]; $("nb-eps").value = P.eps; $("nb-lam").value = P.lam; $("nb-e0").value = P.e0; $("nb-st").value = P.st; nbLabels(); nbRun(); }));
+$("nbForm").addEventListener("submit", (e) => { e.preventDefault(); nbRun(); });
+$("nbForm").addEventListener("input", nbLabels);
+$("nb-cancel").addEventListener("click", () => cancelLane("nbody"));
+
+/* ============================================================ RHEA */
+const rhPlotM = new Plot("ch-rh-m"), rhPlotE = new Plot("ch-rh-e"), rhPlotH = new Plot("ch-rh-h");
+const RP = DATA.rhea, AU_KM = 1.495978707e8, NP0 = 2 * Math.PI / 29.457, G_SI = 6.674e-11;
+function rhLabels() {
+  $("rh-th-o").textContent = (+$("rh-th").value).toFixed(1) + "°"; $("rh-fa-o").textContent = (+$("rh-fa").value).toFixed(3) + "×";
+  $("rh-e0-o").textContent = (+$("rh-e0").value).toFixed(5); $("rh-kq-o").textContent = fmtSci(Math.pow(10, +$("rh-kq").value));
+}
+function trackTM(tr, Mx) {
+  for (let i = 0; i < tr.M.length; i++) if (tr.M[i] <= Mx) {
+    const j = Math.max(1, i);
+    const f = (tr.M[j - 1] - Mx) / (tr.M[j - 1] - tr.M[j] || 1);
+    const mdot = tr.mdot[j - 1] + f * (tr.mdot[j] - tr.mdot[j - 1]), t = tr.t[j - 1] + f * (tr.t[j] - tr.t[j - 1]), L = tr.L[j - 1] + f * (tr.L[j] - tr.L[j - 1]);
+    return { tM: Mx / mdot, t, L, phase: tr.phase[j] };
+  }
+  return null;
+}
+function rhRun() {
+  rhLabels();
+  const eta = $("rh-eta").value, tr = DATA.tracks[eta], theta = +$("rh-th").value * Math.PI / 180, fa = +$("rh-fa").value, e0 = +$("rh-e0").value;
+  // Laplace–Lagrange parameters at the crossing, tabulated against Rhea's expansion factor
+  const TB = DATA.rheaTable; let k = 0; while (k < TB.length - 2 && TB[k + 1].f < fa) k++;
+  const w = Math.max(0, Math.min(1, (fa - TB[k].f) / (TB[k + 1].f - TB[k].f))), lerp = (key) => TB[k][key] + w * (TB[k + 1][key] - TB[k][key]);
+  const gJ2 = lerp("gJ2"), gExt = lerp("gExt"), nm = lerp("n_m"), g = gJ2 + gExt;
+  const Mx = lerp("Mx"), Mwd = tr.M[tr.M.length - 1];
+  if (Mx <= Mwd) {
+    $("rh-stats").innerHTML = stat("Crossing", "none", `Rhea's precession period (${(2 * Math.PI / g).toFixed(1)} yr) exceeds Saturn's final year (${(29.457 / Mwd ** 2).toFixed(1)} yr)`, true);
+    $("rh-status").textContent = "No crossing: the resonance never reaches Rhea."; rhPlotTrack(tr, null); rhPlotE.set({ series: [] }); rhPlotH.set({ series: [] }); return;
+  }
+  const loc = trackTM(tr, Mx);
+  const alpha = RP.a_km * fa / (9.5826 * AU_KM / Mx);
+  const phis = Array.from({ length: 64 }, (_, i) => 2 * Math.PI * (i + 0.37) / 64);
+  const cfg = { nm, gJ2, gExt, theta, tM: loc.tM, e0, phi0: e0 > 0 ? phis : [0], K0: 7, K1: 12, nOut: 2500, alphaA: $("rh-oct").checked ? alpha : 0 };
+  $("rh-run").disabled = true; $("rh-status").textContent = "Integrating Rhea's crossing…";
+  runJob("rhea", "rhea", cfg).then((r) => { $("rh-run").disabled = false; $("rh-status").textContent = ""; rhRender(r, { tr, Mx, loc, fa, e0, theta, nm }); })
+    .catch((e) => { if (e.message !== "cancelled") { $("rh-run").disabled = false; $("rh-status").textContent = "Run failed: " + e.message; } });
+}
+function rhPlotTrack(tr, mark) {
+  const tMyr = tr.t.map((t) => t / 1e6);
+  const series = [{ name: "M⋆ / M☉", x: tMyr, y: tr.M, color: "--series-1", width: 2 }];
+  rhPlotM.set({ series, xLabel: "time since the base of the red-giant branch (Myr)", yLabel: "solar mass (M☉)", xName: "t (Myr)", markers: mark ? [mark] : [] });
+  legend("lg-rh-m", [{ label: "Sun's mass", color: "--series-1" }, { label: "Rhea crossing", color: "--accent", dot: true }]);
+}
+function rhRender(r, ctx) {
+  const ef = r.ef, n = ef.length, mean = ef.reduce((a, b) => a + b, 0) / n, s = ef.slice().sort((a, b) => a - b), q = (f) => s[Math.round(f * (n - 1))];
+  const kq = Math.pow(10, +$("rh-kq").value);
+  const Ms = RP.GM_S * 1e9 / G_SI, aM = RP.a_km * ctx.fa * 1e3, Rm = 763.8e3, mR = RP.GM_R * 1e9 / G_SI, nmS = ctx.nm / 3.15576e7;
+  const heat = 10.5 * kq * G_SI * Ms * Ms * Math.pow(Rm, 5) * nmS * mean * mean / Math.pow(aM, 6);
+  const tauE = (4 / 63) / kq * (mR / Ms) * Math.pow(aM / Rm, 5) / nmS / 3.15576e7;
+  const phaseName = { 1: "red-giant branch (slow wind)", 2: "red clump (core helium burning)", 3: "asymptotic giant branch (superwind)" }[ctx.loc.phase] || "–";
+  $("rh-stats").innerHTML =
+    stat("Sun's mass at crossing", ctx.Mx.toFixed(4) + " M☉", phaseName) +
+    stat("Saturn's year then", (29.457 / ctx.Mx ** 2).toFixed(2) + " yr", "= Rhea's precession period") +
+    stat("Solar luminosity", Math.round(ctx.loc.L) + " L☉", "at the crossing") +
+    stat("Mass-loss time t_M", fmtSci(ctx.loc.tM) + " yr", "M / |Ṁ|") +
+    stat("Adiabaticity Λ", fmt(r.Lam, 2), "≫ 1 means adiabatic") +
+    stat("Universal e⋆", fmt(r.eStar, 4), "f_J₂ = " + r.fJ2.toFixed(3)) +
+    stat("Rhea's final e", fmt(mean, 4), `5–95%: ${fmt(q(0.05), 4)}–${fmt(q(0.95), 4)}`, true) +
+    stat("Tidal heating", fmtSci(heat / 1e9) + " GW", "k₂/Q = " + fmtSci(kq)) +
+    stat("Damping time τ_e", fmtSci(tauE / 1e6) + " Myr", "eccentricity e-folding");
+  rhPlotTrack(ctx.tr, { x: ctx.loc.t / 1e6, y: ctx.Mx, label: `Rhea crossing · M⋆ = ${ctx.Mx.toFixed(3)} M☉` });
+  rhRace(ctx.fa, mean);
+  const tk = r.t.map((t) => t / 1e3), series = r.e.map((e, j) => ({ name: `phase ${j + 1}`, x: tk, y: e, color: ["--series-1", "--series-2", "--series-3", "--series-4"][j], width: 1.6 }));
+  rhPlotE.set({ series, xLabel: "time from exact resonance (kyr)", yLabel: "Rhea's eccentricity", xName: "t (kyr)", hRefs: [{ y: r.eStar, label: "e⋆" }], yZero: true });
+  legend("lg-rh-e", series.map((se) => ({ label: se.name, color: se.color })));
+  const lo = Math.min(...ef), hi = Math.max(...ef), nb = 16, bw = (hi - lo) / nb || 1e-4, bins = new Array(nb).fill(0);
+  ef.forEach((v) => { bins[Math.min(nb - 1, Math.floor((v - lo) / bw))]++; });
+  rhPlotH.set({ series: [{ name: "count", x: bins.map((_, i) => lo + (i + 0.5) * bw), y: bins, kind: "bars", bw, color: "--series-1" }], xLabel: "final eccentricity", yLabel: "phases", xName: "e_f", yZero: true });
+  legend("lg-rh-h", [{ label: "number of initial phases", color: "--series-1" }]);
+}
+const rhPlotRace = new Plot("ch-rh-race");
+function rhRace(fa, eNow) {
+  const eta = +$("rh-eta").value, rows = DATA.race.filter((r) => r.eta === eta);
+  const a = rows.filter((r) => r.e0 > 0), b = rows.filter((r) => r.e0 === 0);
+  rhPlotRace.set({ series: [
+    { name: "free e₀ = 10⁻³", x: a.map((r) => r.f), y: a.map((r) => r.mean), color: "--series-1", width: 2 },
+    { name: "initially circular", x: b.map((r) => r.f), y: b.map((r) => Math.max(r.mean, 1e-5)), color: "--series-2", width: 2 }],
+    yLog: true, yDomain: [1e-5, 0.06], xLabel: "Rhea's expansion factor before the crossing", yLabel: "final eccentricity", xName: "f",
+    hRefs: [{ y: 0.00126, label: "today", color: "--muted" }], markers: isFinite(eNow) ? [{ x: fa, y: Math.max(eNow, 1.2e-5), label: "your run" }] : [] });
+  legend("lg-rh-race", [{ label: "free e₀ = 10⁻³", color: "--series-1" }, { label: "initially circular", color: "--series-2" }, { label: "your run", color: "--accent", dot: true }]);
+}
+function rhTable() {
+  const rows = DATA.crossings.filter((r) => isFinite(r.P_varpi_yr));
+  const html = `<table><thead><tr><th>Planet</th><th>Moon</th><th class="num">a / R_p</th><th class="num">Precession period (yr)</th><th class="num">Orbital period now → final (yr)</th><th>Swept?</th><th class="num">M⋆ at crossing</th><th class="num">e⋆</th><th class="num">Λ (η = 0.477)</th></tr></thead><tbody>${rows.map((r) => {
+    const fin = r.P_orb_yr / (0.5605 ** 2);
+    const swept = r.crosses ? (r.mmr ? '<span class="chip run">yes · in MMR</span>' : (r.moon === "Phobos" ? '<span class="chip">yes · will not survive</span>' : '<span class="chip acc">yes</span>')) : '<span class="chip">no</span>';
+    return `<tr><td>${r.planet}</td><td>${r.moon}</td><td class="num">${r.a_over_R.toFixed(2)}</td><td class="num">${r.P_varpi_yr.toFixed(2)}</td><td class="num">${r.P_orb_yr.toFixed(2)} → ${fin.toFixed(1)}</td><td>${swept}</td><td class="num">${r.crosses ? r.M_cross.toFixed(4) : "–"}</td><td class="num">${r.crosses ? r.e_star.toFixed(4) : "–"}</td><td class="num">${r.crosses ? fmt(r["Lam_0.477"], 2) : "–"}</td></tr>`;
+  }).join("")}</tbody></table><p class="note" style="margin-top:8px">Moons in mean-motion resonances (marked) need a resonant secular theory; Phobos will have spiralled into Mars long before the Sun leaves the main sequence. Uranus's 98° obliquity suppresses evection by cos⁸(θ/2) ≈ 0.03.</p>`;
+  $("rh-table").innerHTML = html;
+}
+$("rhForm").addEventListener("submit", (e) => { e.preventDefault(); rhRun(); });
+let rhTimer = null;
+$("rhForm").addEventListener("input", () => { rhLabels(); clearTimeout(rhTimer); rhTimer = setTimeout(rhRun, 350); });
+
+/* ============================================================ VERIFY */
+const VTESTS = [
+  ["Apsidal precession from J₂ (N-body, no tide)", "\\(\\dot\\varpi=\\tfrac32 n_mJ_2(R_p/a_m)^2\\)"],
+  ["Adiabatic orbit expansion (N-body)", "\\(a_p(M_\\ast+m_p)=\\text{const}\\)"],
+  ["Landau–Zener rms gain, Λ = 1", "\\(\\langle e_f^2\\rangle^{1/2}/e_0=\\sqrt{2e^{2\\Lambda}-1}\\)"],
+  ["Landau–Zener rms gain, Λ = 2.5", "\\(\\sqrt{2e^{2\\Lambda}-1}\\)"],
+  ["Landau–Zener maximum gain, Λ = 1", "\\(e^{\\Lambda}+\\sqrt{e^{2\\Lambda}-1}\\)"],
+  ["Adiabatic jump map, e₀ = 0.7 e⋆, Λ = 256", "\\(e_f(e_0)\\) from separatrix areas"],
+  ["Universal plateau, e₀ = 10⁻³ e⋆, Λ = 256", "\\(e_f\\to e_\\star\\)"],
+  ["Capture direction pumps e (Λ = 64)", "stable island centre \\(W(e)=C(e)\\)"],
+  ["Quadrupole N-body vs secular (ε = 0.01)", "rms \\(e_f/e_\\star\\) over 8 phases"],
+  ["Circular moon seeded by octupole (ε = 0.01)", "N-body vs secular with \\(\\mathcal H_3\\)"],
+  ["Rhea crossing mass", "\\(M_x=M_\\odot\\sqrt{g/n_{p0}}\\)"],
+  ["Rhea final e (η = 0.477, θ = 26.7°, e₀ = 10⁻³)", "value quoted in the paper"],
+];
+function vfInit() {
+  $("vf-table").querySelector("tbody").innerHTML = VTESTS.map((t, i) => `<tr class="verify-row" id="vf-${i}"><td>${t[0]}</td><td>${t[1]}</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td><span class="chip">pending</span></td></tr>`).join("");
+  typeset($("vf-table"));
+}
+function vfRun() {
+  vfInit(); $("vf-run").disabled = true; $("vf-status").textContent = "Running…"; $("vf-prog").style.width = "0%";
+  let nDone = 0, nPass = 0; const t0 = performance.now();
+  runJob("verify", "verify", { rhea: DATA.rhea, paperRhea: DATA.paperRhea }, (m) => {
+    if (!m.row) return; const r = m.row, tr = $("vf-" + r.i), cells = tr.children;
+    if (r.state === "run") { cells[6].innerHTML = '<span class="chip run">running</span>'; return; }
+    nDone++; if (r.state === "pass") nPass++;
+    $("vf-prog").style.width = (100 * nDone / VTESTS.length).toFixed(0) + "%";
+    cells[2].textContent = fmt(r.exp, 5); cells[3].textContent = fmt(r.sim, 5); cells[4].textContent = r.dev != null ? (100 * r.dev).toFixed(2) + "%" : "–"; cells[5].textContent = r.tol != null ? (100 * r.tol).toFixed(1) + "%" : "–";
+    cells[6].innerHTML = r.state === "pass" ? '<span class="chip pass">✓ pass</span>' : `<span class="chip fail">✗ fail</span>${r.error ? `<br><span class="note">${r.error}</span>` : ""}`;
+  }).then(() => { $("vf-run").disabled = false; $("vf-status").textContent = `${nPass} of ${VTESTS.length} passed in ${((performance.now() - t0) / 1000).toFixed(1)} s.`; })
+    .catch((e) => { $("vf-run").disabled = false; $("vf-status").textContent = "Suite stopped: " + e.message; });
+}
+$("vf-run").addEventListener("click", vfRun);
+
+/* ============================================================ boot */
+function rerenderAll() { [swPlotE, swPlotPh, swHeat, nbPlotE, nbPlotPhi, nbPlotAd, rhPlotM, rhPlotE, rhPlotH, rhPlotRace].forEach((p) => p.draw()); swPortrait.draw(); }
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerenderAll);
+new MutationObserver(rerenderAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+swUpdateLabels(); nbLabels(); rhLabels(); vfInit(); rhTable();
+swRun(); rhRun();
+let startTab = "sweep";
+try { const h = location.hash.replace("#", ""); const s = localStorage.getItem("evlab-tab"); startTab = tabs.includes(h) ? h : (tabs.includes(s) ? s : "sweep"); } catch (e) {}
+showTab(startTab);
+</script>
+
+</body>
+</html>
